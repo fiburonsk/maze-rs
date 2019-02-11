@@ -1,5 +1,6 @@
 use rand;
 use shared::{clear_screen, Direction, Progress};
+use std::env;
 use std::thread;
 use std::time::Duration;
 
@@ -133,7 +134,23 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
 }
 
 fn main() {
-    let maze = prims::generate(4, 35, 125, Progress::None);
+    let mut args = env::args();
+    args.next();
+    let seed = args
+        .next()
+        .map(|s| s.parse::<usize>().unwrap_or(1))
+        .unwrap_or(1);
+    let height = args
+        .next()
+        .map(|s| s.parse::<usize>().unwrap_or(11))
+        .unwrap_or(11);
+    let width = args
+        .next()
+        .map(|s| s.parse::<usize>().unwrap_or(11))
+        .unwrap_or(11);
+
+    // let maze = prims::generate(seed, height, width, Progress::Delay(100_000));
+    let maze = prims::generate(seed, height, width, Progress::None);
 
     if let Some(solution) = solve(&maze, Progress::None) {
         clear_screen();
@@ -142,6 +159,15 @@ fn main() {
         println!();
         print_maze_with_solution(&maze, &solution);
     } else {
+        clear_screen();
+        println!("Here is the maze to solve:");
+        maze::print_maze(&maze);
+        println!();
+
         println!("Unable to solve the maze.");
     }
+
+    println!("{:?}", &seed);
+    println!("{:?}", &height);
+    println!("{:?}", &width);
 }
