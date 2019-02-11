@@ -1,16 +1,11 @@
+use rand;
+use shared::{clear_screen, Direction, Progress};
 use std::thread;
 use std::time::Duration;
+
 mod maze;
-
-const DELAY: u64 = 40;
-
-#[derive(Debug, PartialEq)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
+mod prims;
+mod shared;
 
 trait Movement {
     fn go(&self, pos: &maze::Pos, dir: &Direction) -> Option<maze::Pos>;
@@ -48,7 +43,7 @@ fn all_directions() -> Vec<Direction> {
     ];
 }
 
-fn inverse_dir(dir: &Direction) -> Direction {
+fn opposite_dir(dir: &Direction) -> Direction {
     match dir {
         Direction::Up => Direction::Down,
         Direction::Down => Direction::Up,
@@ -57,11 +52,7 @@ fn inverse_dir(dir: &Direction) -> Direction {
     }
 }
 
-pub fn clear_screen() {
-    print!("{}[2J", 27 as char);
-}
-
-fn solve(maze: &maze::Maze) -> Option<Vec<maze::Pos>> {
+fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
     println!("Solve the maze!");
     let start = match maze.start_at() {
         Some(pos) => pos,
@@ -84,9 +75,11 @@ fn solve(maze: &maze::Maze) -> Option<Vec<maze::Pos>> {
             .map(|v| v.at.clone())
             .collect::<Vec<maze::Pos>>();
 
-        clear_screen();
-        print_maze_with_solution(maze, &route);
-        thread::sleep(Duration::from_millis(DELAY));
+        if let Progress::Delay(time) = progress {
+            clear_screen();
+            print_maze_with_solution(maze, &route);
+            thread::sleep(Duration::from_micros(time));
+        }
 
         let mut visit = visitor.pop().unwrap();
 
@@ -97,7 +90,8 @@ fn solve(maze: &maze::Maze) -> Option<Vec<maze::Pos>> {
         }
 
         if !visit.moves.is_empty() {
-            let dir = visit.moves.pop().unwrap();
+            let i = rand::random::<usize>() % visit.moves.len();
+            let dir = visit.moves.remove(i);
             let pos = &visit.at.clone();
             visitor.push(visit);
 
@@ -109,9 +103,10 @@ fn solve(maze: &maze::Maze) -> Option<Vec<maze::Pos>> {
                         at: p,
                         moves: all_directions()
                             .into_iter()
-                            .filter(|d| *d != inverse_dir(&dir))
+                            .filter(|d| *d != opposite_dir(&dir))
                             .collect(),
                     };
+
                     visitor.push(next);
                 }
             }
@@ -119,15 +114,6 @@ fn solve(maze: &maze::Maze) -> Option<Vec<maze::Pos>> {
     }
 
     None
-}
-
-fn print_maze(maze: &maze::Maze) {
-    for row in maze.board.iter() {
-        for col in row.iter() {
-            print!("{}", &col);
-        }
-        println!();
-    }
 }
 
 fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
@@ -147,14 +133,12 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
 }
 
 fn main() {
-    let maze = maze::Maze {
-        board: maze::make(),
-    };
+    let maze = prims::generate(4, 35, 125, Progress::None);
 
-    if let Some(solution) = solve(&maze) {
+    if let Some(solution) = solve(&maze, Progress::None) {
         clear_screen();
         println!("Here is the maze to solve:");
-        print_maze(&maze);
+        maze::print_maze(&maze);
         println!();
         print_maze_with_solution(&maze, &solution);
     } else {

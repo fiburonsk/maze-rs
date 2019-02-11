@@ -6,6 +6,7 @@ pub enum Part {
     Open,
     Start,
     Finish,
+    Frontier,
 }
 
 impl fmt::Display for Part {
@@ -15,6 +16,7 @@ impl fmt::Display for Part {
             Part::Open => ' ',
             Part::Start => 's',
             Part::Finish => 'f',
+            Part::Frontier => '+',
         };
 
         write!(f, "{}", c)
@@ -59,6 +61,18 @@ pub struct Maze {
 }
 
 impl Maze {
+    pub fn height(&self) -> usize {
+        self.board.len()
+    }
+
+    pub fn width(&self) -> usize {
+        if self.board.is_empty() {
+            0
+        } else {
+            self.board[0].len()
+        }
+    }
+
     pub fn at(&self, pos: &Pos) -> Part {
         self.board[pos.y][pos.x]
     }
@@ -96,27 +110,11 @@ impl Maze {
     }
 }
 
-pub fn make() -> Vec<Vec<Part>> {
-    let b = Part::Wall;
-    let o = Part::Open;
-    let s = Part::Start;
-    let f = Part::Finish;
-
-    vec![
-        vec![b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b],
-        vec![b, s, o, o, o, o, o, o, o, o, o, o, b, b, b, b, o, b],
-        vec![b, b, b, o, b, b, b, b, b, b, b, o, o, o, o, o, o, b],
-        vec![b, o, b, o, b, o, b, b, o, o, o, b, b, b, b, o, b, b],
-        vec![b, o, b, o, b, o, o, o, o, b, o, o, o, o, o, o, o, b],
-        vec![b, o, o, o, b, o, b, b, b, b, b, b, b, b, b, b, b, b],
-        vec![b, o, b, b, b, o, b, b, o, b, o, o, o, o, o, o, f, b],
-        vec![b, o, b, o, o, o, o, o, o, b, o, b, b, b, b, b, o, b],
-        vec![b, o, b, b, b, b, b, b, o, b, o, o, o, b, o, o, o, b],
-        vec![b, o, b, o, o, o, o, b, o, b, b, b, b, b, b, b, o, b],
-        vec![b, o, b, b, b, o, b, b, o, o, o, o, o, b, o, b, o, b],
-        vec![b, o, o, o, b, o, b, b, o, b, b, b, o, o, o, o, o, b],
-        vec![b, o, b, b, b, o, b, b, o, b, o, b, b, b, o, b, b, b],
-        vec![b, o, o, o, o, o, o, b, o, o, o, o, o, o, o, o, o, b],
-        vec![b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b],
-    ]
+pub fn print_maze(maze: &Maze) {
+    for row in maze.board.iter() {
+        for col in row.iter() {
+            print!("{}", &col);
+        }
+        println!();
+    }
 }
