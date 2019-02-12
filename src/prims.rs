@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use super::maze::{print_maze, Maze, Part, Pos};
-use super::shared::{clear_screen, Progress};
+use super::shared::{self, Direction, Progress};
 
 const MIN: usize = 2;
 const MAX: usize = 3;
@@ -153,7 +153,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
         mark(&current, &mut maze, &mut frontier);
 
         if progress != Progress::None {
-            clear_screen();
+            shared::clear_screen();
             print_maze(&maze);
         }
 
@@ -174,7 +174,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             open(&mut maze, &middle);
 
             if progress != Progress::None {
-                clear_screen();
+                shared::clear_screen();
                 print_maze(&maze);
             }
         }

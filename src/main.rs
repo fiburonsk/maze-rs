@@ -35,24 +35,6 @@ struct Visit {
     at: maze::Pos,
 }
 
-fn all_directions() -> Vec<Direction> {
-    return vec![
-        Direction::Up,
-        Direction::Right,
-        Direction::Down,
-        Direction::Left,
-    ];
-}
-
-fn opposite_dir(dir: &Direction) -> Direction {
-    match dir {
-        Direction::Up => Direction::Down,
-        Direction::Down => Direction::Up,
-        Direction::Left => Direction::Right,
-        Direction::Right => Direction::Left,
-    }
-}
-
 fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
     println!("Solve the maze!");
     let start = match maze.start_at() {
@@ -63,7 +45,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
     let mut visited: Vec<maze::Pos> = vec![start.clone()];
     let mut visitor = vec![Visit {
         at: start.clone(),
-        moves: all_directions(),
+        moves: shared::all_directions(),
     }];
 
     loop {
@@ -102,9 +84,9 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
 
                     let next = Visit {
                         at: p,
-                        moves: all_directions()
+                        moves: shared::all_directions()
                             .into_iter()
-                            .filter(|d| *d != opposite_dir(&dir))
+                            .filter(|d| *d != shared::opposite_dir(&dir))
                             .collect(),
                     };
 
@@ -149,8 +131,8 @@ fn main() {
         .map(|s| s.parse::<usize>().unwrap_or(11))
         .unwrap_or(11);
 
-    // let maze = prims::generate(seed, height, width, Progress::Delay(100_000));
-    let maze = prims::generate(seed, height, width, Progress::None);
+    let maze = prims::generate(seed, height, width, Progress::Delay(50_000));
+    // let maze = prims::generate(seed, height, width, Progress::None);
 
     if let Some(solution) = solve(&maze, Progress::None) {
         clear_screen();
