@@ -3,13 +3,15 @@ use std::thread;
 use std::time::Duration;
 
 use super::maze::{print_maze, Maze, Part, Pos};
-use super::shared::{self, Direction, Progress};
-
-const MIN: usize = 2;
-const MAX: usize = 3;
+use super::shared::{self, Progress};
 
 type Row = Vec<Part>;
 type Blocks = Vec<Pos>;
+
+enum Wall {
+    Horizontal,
+    Vertical,
+}
 
 trait ChangeBoard {
     fn change(&mut self, pos: &Pos, to: Part);
@@ -21,37 +23,37 @@ impl ChangeBoard for Maze {
     }
 }
 
-fn neighbors(pos: &Pos, m: &Maze) -> Blocks {
+fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
     let mut n = vec![];
-    let max_y = m.height() - MAX;
-    let max_x = m.width() - MAX;
+    let max_y = m.height() - 1;
+    let max_x = m.width() - 1;
 
-    let check = |p: &Pos| -> bool { m.at(p) == Part::Wall || m.at(p) == Part::Frontier };
+    let check = |p: &Pos| -> bool { m.is_wall(p) };
 
-    if pos.y > MIN {
-        let up = pos.up().up();
+    if pos.y > 1 {
+        let up = pos.up();
         if check(&up) {
             n.push(up);
         }
     }
 
     if pos.x < max_x {
-        let right = pos.right().right();
+        let right = pos.right();
         if check(&right) {
             n.push(right);
         }
     }
 
     if pos.y < max_y {
-        let down = pos.down().down();
+        let down = pos.down();
 
         if check(&down) {
             n.push(down);
         }
     }
 
-    if pos.x > MIN {
-        let left = pos.left().left();
+    if pos.x > 1 {
+        let left = pos.left();
 
         if check(&left) {
             n.push(left);
@@ -61,71 +63,32 @@ fn neighbors(pos: &Pos, m: &Maze) -> Blocks {
     n
 }
 
-fn mark(pos: &Pos, m: &mut Maze, frontier: &mut Blocks) {
-    open(m, pos);
-    let max_y = m.height() - MAX;
-    let max_x = m.width() - MAX;
-
-    if pos.y > MIN {
-        add_frontier(&(pos.up().up()), m, frontier);
-    }
-
-    if pos.x < max_x {
-        add_frontier(&(pos.right().right()), m, frontier);
-    }
-
-    if pos.y < max_y {
-        add_frontier(&(pos.down().down()), m, frontier);
-    }
-
-    if pos.x > MIN {
-        add_frontier(&(pos.left().left()), m, frontier);
-    }
-}
-
 fn open(m: &mut Maze, pos: &Pos) {
     m.change(pos, Part::Open);
 }
 
-fn add_frontier(pos: &Pos, m: &mut Maze, frontier: &mut Blocks) {
-    if Part::Wall == m.at(pos) {
-        frontier.push(pos.clone());
-        m.change(pos, Part::Frontier);
+fn find_cells(pos: &Pos, w: &Wall) -> (Pos, Pos) {
+    match w {
+        Wall::Horizontal => (pos.left(), pos.right()),
+        Wall::Vertical => (pos.up(), pos.down()),
     }
 }
 
-fn find_middle(current: &Pos, next: &Pos) -> Pos {
-    if current.x == next.x {
-        if current.y > next.y {
-            current.up()
-        } else {
-            current.down()
-        }
-    } else if current.x > next.x {
-        current.left()
-    } else {
-        current.right()
+fn check_wall(pos: &Pos, w: &Wall, m: &Maze) -> bool {
+    let max_y = m.height() - 2;
+    let max_x = m.width() - 2;
+
+    match w {
+        Wall::Horizontal => pos.x > 1 && pos.x < max_x,
+        Wall::Vertical => pos.y > 1 && pos.y < max_y,
     }
 }
 
-fn find_opposite(current: &Pos, next: &Pos, m: &Maze) -> Option<Pos> {
-    let max_y = m.height() - MAX;
-    let max_x = m.width() - MAX;
-
-    if current.x == next.x {
-        if current.y > next.y && current.y < max_y {
-            Some(current.down().down())
-        } else if current.y < next.y && current.y > MIN {
-            Some(current.up().up())
-        } else {
-            None
-        }
-    } else if current.x > next.x && current.x < max_x {
-        Some(current.right().right())
-    } else if current.x < next.x && current.x > MIN {
-        Some(current.left().left())
+fn wall_type(pos: &Pos) -> Wall {
+    if pos.x % 2 == 0 {
+        Wall::Horizontal
     } else {
-        None
+        Wall::Vertical
     }
 }
 
@@ -138,48 +101,40 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let start = Pos { x: 1, y: 1 };
     let mut frontier: Blocks = vec![start.clone()];
+    maze.change(&start, Part::Open);
     let mut last = start.clone();
-
-    while !frontier.is_empty() {
-        let current = {
-            let index = rng.gen::<usize>() % frontier.len();
-            frontier.remove(index)
+    let mut walls: Blocks = walls_for(&start, &maze);
+    while !walls.is_empty() {
+        let wall = {
+            let index = rng.gen::<usize>() % walls.len();
+            walls.remove(index)
         };
 
-        last = current.clone();
+        let kind = wall_type(&wall);
 
-        let mut n = neighbors(&current, &maze);
-
-        mark(&current, &mut maze, &mut frontier);
-
-        if progress != Progress::None {
-            shared::clear_screen();
-            print_maze(&maze);
+        if !check_wall(&wall, &kind, &maze) {
+            continue;
         }
 
-        if !n.is_empty() {
-            let next = {
-                let index = rng.gen::<usize>() % n.len();
-                n.remove(index)
-            };
+        let cells = find_cells(&wall, &kind);
 
-            let middle = find_middle(&current, &next);
-            if let Some(opposite) = find_opposite(&current, &next, &maze) {
-                if maze.at(&opposite) == Part::Open {
-                    let wall = find_middle(&current, &opposite);
-                    open(&mut maze, &wall);
-                }
-            }
-
-            open(&mut maze, &middle);
-
-            if progress != Progress::None {
-                shared::clear_screen();
-                print_maze(&maze);
-            }
+        if maze.at(&cells.0) == Part::Open && maze.at(&cells.1) != Part::Open {
+            frontier.push(cells.1.clone());
+            open(&mut maze, &cells.1);
+            open(&mut maze, &wall);
+            walls.append(&mut walls_for(&cells.1, &maze));
+            last = cells.1.clone();
+        } else if maze.at(&cells.1) == Part::Open && maze.at(&cells.0) != Part::Open {
+            frontier.push(cells.0.clone());
+            open(&mut maze, &cells.0);
+            open(&mut maze, &wall);
+            walls.append(&mut walls_for(&cells.0, &maze));
+            last = cells.0.clone();
         }
 
         if let Progress::Delay(time) = progress {
+            shared::clear_screen();
+            print_maze(&maze);
             thread::sleep(Duration::from_micros(time));
         }
     }

@@ -6,7 +6,6 @@ pub enum Part {
     Open,
     Start,
     Finish,
-    Frontier,
 }
 
 impl fmt::Display for Part {
@@ -16,7 +15,6 @@ impl fmt::Display for Part {
             Part::Open => ' ',
             Part::Start => 's',
             Part::Finish => 'f',
-            Part::Frontier => '+',
         };
 
         write!(f, "{}", c)

@@ -134,22 +134,22 @@ fn main() {
     let maze = prims::generate(seed, height, width, Progress::Delay(50_000));
     // let maze = prims::generate(seed, height, width, Progress::None);
 
-    if let Some(solution) = solve(&maze, Progress::None) {
+    let message = format!(
+        "Here is the maze: [seed: {}, height: {}, width: {}]",
+        &seed, &height, &width
+    );
+
+    if let Some(solution) = solve(&maze, Progress::Delay(50_000)) {
         clear_screen();
-        println!("Here is the maze to solve:");
+        println!("{}", &message);
         maze::print_maze(&maze);
         println!();
         print_maze_with_solution(&maze, &solution);
     } else {
         clear_screen();
-        println!("Here is the maze to solve:");
+        println!("{}", &message);
         maze::print_maze(&maze);
         println!();
-
         println!("Unable to solve the maze.");
     }
-
-    println!("{:?}", &seed);
-    println!("{:?}", &height);
-    println!("{:?}", &width);
 }
