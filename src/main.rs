@@ -106,7 +106,7 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
                 && col != &(maze::Part::Finish)
                 && solution.contains(&(maze::Pos { x: x, y: y }))
             {
-                print!(".");
+                print!("+");
             } else {
                 print!("{}", &col);
             }
@@ -132,7 +132,6 @@ fn main() {
         .unwrap_or(11);
 
     let maze = prims::generate(seed, height, width, Progress::Delay(50_000));
-    // let maze = prims::generate(seed, height, width, Progress::None);
 
     let message = format!(
         "Here is the maze: [seed: {}, height: {}, width: {}]",
