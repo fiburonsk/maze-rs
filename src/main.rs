@@ -130,15 +130,35 @@ fn main() {
         .next()
         .map(|s| s.parse::<usize>().unwrap_or(11))
         .unwrap_or(11);
+    let show_build = args
+        .next()
+        .map(|s| {
+            if s == "1" {
+                Progress::Delay(50_000)
+            } else {
+                Progress::None
+            }
+        })
+        .unwrap_or(Progress::None);
+    let show_solve = args
+        .next()
+        .map(|s| {
+            if s == "1" {
+                Progress::Delay(50_000)
+            } else {
+                Progress::None
+            }
+        })
+        .unwrap_or(Progress::None);
 
-    let maze = prims::generate(seed, height, width, Progress::Delay(50_000));
+    let maze = prims::generate(seed, height, width, show_build);
 
     let message = format!(
         "Here is the maze: [seed: {}, height: {}, width: {}]",
         &seed, &height, &width
     );
 
-    if let Some(solution) = solve(&maze, Progress::Delay(50_000)) {
+    if let Some(solution) = solve(&maze, show_solve) {
         clear_screen();
         println!("{}", &message);
         maze::print_maze(&maze);
