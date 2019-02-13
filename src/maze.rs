@@ -11,10 +11,10 @@ pub enum Part {
 impl fmt::Display for Part {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let c = match &self {
-            Part::Wall => '\u{2588}',
-            Part::Open => ' ',
-            Part::Start => 's',
-            Part::Finish => 'f',
+            Part::Wall => "\x1b[90m\u{2588}\x1b[0m",
+            Part::Open => " ",
+            Part::Start => "\x1b[1;33ms\x1b[0m",
+            Part::Finish => "\x1b[1;33mf\x1b[0m",
         };
 
         write!(f, "{}", c)

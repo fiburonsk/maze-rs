@@ -3,15 +3,10 @@ use std::thread;
 use std::time::Duration;
 
 use super::maze::{print_maze, Maze, Part, Pos};
-use super::shared::{self, Progress};
+use super::shared::{self, Progress, Wall};
 
 type Row = Vec<Part>;
 type Blocks = Vec<Pos>;
-
-enum Wall {
-    Horizontal,
-    Vertical,
-}
 
 trait ChangeBoard {
     fn change(&mut self, pos: &Pos, to: Part);
@@ -84,8 +79,8 @@ fn check_wall(pos: &Pos, w: &Wall, m: &Maze) -> bool {
     }
 }
 
-fn wall_type(pos: &Pos) -> Wall {
-    if pos.x % 2 == 0 {
+fn wall_type(pos: &Pos, start: &Pos) -> Wall {
+    if pos.x % 2 != start.x % 2 {
         Wall::Horizontal
     } else {
         Wall::Vertical
@@ -93,13 +88,19 @@ fn wall_type(pos: &Pos) -> Wall {
 }
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
+    shared::clear_screen();
     let board = (0..height)
         .map(|_y| (0..width).map(|_x| Part::Wall).collect::<Row>())
         .collect::<Vec<Row>>();
 
     let mut maze = Maze { board: board };
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
-    let start = Pos { x: 1, y: 1 };
+    let start = shared::pick_start(
+        rng.gen::<usize>(),
+        rng.gen::<usize>(),
+        maze.height(),
+        maze.width(),
+    );
     let mut frontier: Blocks = vec![start.clone()];
     maze.change(&start, Part::Open);
     let mut last = start.clone();
@@ -110,7 +111,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             walls.remove(index)
         };
 
-        let kind = wall_type(&wall);
+        let kind = wall_type(&wall, &start);
 
         if !check_wall(&wall, &kind, &maze) {
             continue;
@@ -133,7 +134,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
         }
 
         if let Progress::Delay(time) = progress {
-            shared::clear_screen();
+            shared::redraw();
             print_maze(&maze);
             thread::sleep(Duration::from_micros(time));
         }

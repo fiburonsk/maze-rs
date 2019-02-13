@@ -1,9 +1,10 @@
 use rand;
-use shared::{clear_screen, Direction, Progress};
+use shared::{Direction, Progress};
 use std::env;
 use std::thread;
 use std::time::Duration;
 
+mod backtracker;
 mod maze;
 mod prims;
 mod shared;
@@ -59,7 +60,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
             .collect::<Vec<maze::Pos>>();
 
         if let Progress::Delay(time) = progress {
-            clear_screen();
+            shared::redraw();
             print_maze_with_solution(maze, &route);
             thread::sleep(Duration::from_micros(time));
         }
@@ -106,7 +107,7 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
                 && col != &(maze::Part::Finish)
                 && solution.contains(&(maze::Pos { x: x, y: y }))
             {
-                print!("+");
+                print!("\x1b[0;33m+\x1b[0m");
             } else {
                 print!("{}", &col);
             }
@@ -132,26 +133,23 @@ fn main() {
         .unwrap_or(11);
     let show_build = args
         .next()
-        .map(|s| {
-            if s == "1" {
-                Progress::Delay(50_000)
-            } else {
-                Progress::None
-            }
+        .map(|s| match s.parse::<u64>() {
+            Ok(x) if x > 0 => Progress::Delay(x),
+            _ => Progress::None,
         })
         .unwrap_or(Progress::None);
     let show_solve = args
         .next()
-        .map(|s| {
-            if s == "1" {
-                Progress::Delay(50_000)
-            } else {
-                Progress::None
-            }
+        .map(|s| match s.parse::<u64>() {
+            Ok(x) if x > 0 => Progress::Delay(x),
+            _ => Progress::None,
         })
         .unwrap_or(Progress::None);
 
-    let maze = prims::generate(seed, height, width, show_build);
+    let maze = match &args.next() {
+        Some(x) if x == "b" => backtracker::generate(seed, height, width, show_build.clone()),
+        _ => prims::generate(seed, height, width, show_build.clone()),
+    };
 
     let message = format!(
         "Here is the maze: [seed: {}, height: {}, width: {}]",
@@ -159,13 +157,13 @@ fn main() {
     );
 
     if let Some(solution) = solve(&maze, show_solve) {
-        clear_screen();
+        shared::clear_screen();
         println!("{}", &message);
         maze::print_maze(&maze);
         println!();
         print_maze_with_solution(&maze, &solution);
     } else {
-        clear_screen();
+        shared::clear_screen();
         println!("{}", &message);
         maze::print_maze(&maze);
         println!();

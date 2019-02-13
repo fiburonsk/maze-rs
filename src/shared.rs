@@ -1,3 +1,5 @@
+use super::maze::Pos;
+
 #[derive(Debug, PartialEq)]
 pub enum Direction {
     Up,
@@ -24,7 +26,7 @@ pub fn opposite_dir(dir: &Direction) -> Direction {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Progress {
     Delay(u64),
     None,
@@ -32,4 +34,20 @@ pub enum Progress {
 
 pub fn clear_screen() {
     print!("{}[2J", 27 as char);
+}
+
+pub fn redraw() {
+    print!("{}[0;0f", 27 as char);
+}
+
+pub enum Wall {
+    Horizontal,
+    Vertical,
+}
+
+pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Pos {
+    let x = usize::max(seed1 % (width - 1), 1);
+    let y = usize::max(seed2 % (height - 1), 1);
+
+    Pos { x, y }
 }
