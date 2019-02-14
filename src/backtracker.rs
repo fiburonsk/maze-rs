@@ -30,28 +30,28 @@ fn find_neighbors(pos: &Pos, m: &Maze) -> Blocks {
 
     if pos.x > min {
         let next = pos.left().left();
-        if m.is_open(&next) {
+        if !m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.y > min {
         let next = pos.up().up();
-        if m.is_open(&next) {
+        if !m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.x < max_x {
         let next = pos.right().right();
-        if m.is_open(&next) {
+        if !m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.y < max_y {
         let next = pos.down().down();
-        if m.is_open(&next) {
+        if !m.is_open(&next) {
             n.push(next);
         }
     }
