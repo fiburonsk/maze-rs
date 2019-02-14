@@ -30,28 +30,28 @@ fn find_neighbors(pos: &Pos, m: &Maze) -> Blocks {
 
     if pos.x > min {
         let next = pos.left().left();
-        if m.at(&next) != Part::Open {
+        if m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.y > min {
         let next = pos.up().up();
-        if m.at(&next) != Part::Open {
+        if m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.x < max_x {
         let next = pos.right().right();
-        if m.at(&next) != Part::Open {
+        if m.is_open(&next) {
             n.push(next);
         }
     }
 
     if pos.y < max_y {
         let next = pos.down().down();
-        if m.at(&next) != Part::Open {
+        if m.is_open(&next) {
             n.push(next);
         }
     }
@@ -88,9 +88,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     let mut visited: Blocks = vec![start.clone()];
     let mut last = start.clone();
 
-    while !visited.is_empty() {
-        let current = visited.pop().unwrap();
-
+    while let Some(current) = visited.pop() {
         open(&mut maze, &current);
 
         let mut neighbors = find_neighbors(&current, &maze);

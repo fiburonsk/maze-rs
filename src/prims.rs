@@ -87,6 +87,16 @@ fn wall_type(pos: &Pos, start: &Pos) -> Wall {
     }
 }
 
+fn check_cell(cell: (Pos, Pos), m: &Maze) -> Option<Pos> {
+    if m.is_open(&cell.0) && !m.is_open(&cell.1) {
+        Some(cell.1)
+    } else if m.is_open(&cell.1) && !m.is_open(&cell.0) {
+        Some(cell.0)
+    } else {
+        None
+    }
+}
+
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
     shared::clear_screen();
     let board = (0..height)
@@ -102,7 +112,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
         maze.width(),
     );
     let mut frontier: Blocks = vec![start.clone()];
-    maze.change(&start, Part::Open);
+    open(&mut maze, &start);
     let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
     while !walls.is_empty() {
@@ -119,18 +129,12 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
 
         let cells = find_cells(&wall, &kind);
 
-        if maze.at(&cells.0) == Part::Open && maze.at(&cells.1) != Part::Open {
-            frontier.push(cells.1.clone());
-            open(&mut maze, &cells.1);
+        if let Some(next) = check_cell(cells, &maze) {
+            open(&mut maze, &next);
             open(&mut maze, &wall);
-            walls.append(&mut walls_for(&cells.1, &maze));
-            last = cells.1.clone();
-        } else if maze.at(&cells.1) == Part::Open && maze.at(&cells.0) != Part::Open {
-            frontier.push(cells.0.clone());
-            open(&mut maze, &cells.0);
-            open(&mut maze, &wall);
-            walls.append(&mut walls_for(&cells.0, &maze));
-            last = cells.0.clone();
+            walls.append(&mut walls_for(&next, &maze));
+            last = next.clone();
+            frontier.push(next);
         }
 
         if let Progress::Delay(time) = progress {

@@ -75,6 +75,10 @@ impl Maze {
         self.board[pos.y][pos.x]
     }
 
+    pub fn is_open(&self, pos: &Pos) -> bool {
+        self.at(pos) == Part::Open
+    }
+
     pub fn is_wall(&self, pos: &Pos) -> bool {
         self.at(pos) == Part::Wall
     }
