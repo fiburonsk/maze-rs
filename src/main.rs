@@ -15,17 +15,12 @@ trait Movement {
 
 impl Movement for maze::Maze {
     fn go(&self, pos: &maze::Pos, dir: &Direction) -> Option<maze::Pos> {
-        let pos = match dir {
-            Direction::Up => pos.up(),
-            Direction::Down => pos.down(),
-            Direction::Right => pos.right(),
-            Direction::Left => pos.left(),
-        };
-
-        if !self.is_wall(&pos) {
-            Some(pos)
-        } else {
-            None
+        match dir {
+            Direction::Up if pos.y > 0 => Some(pos.up()),
+            Direction::Down if pos.y < self.height_edge() => Some(pos.down()),
+            Direction::Right if pos.x < self.width_edge() => Some(pos.right()),
+            Direction::Left if pos.y > 0 => Some(pos.left()),
+            _ => None,
         }
     }
 }
@@ -80,7 +75,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
             visitor.push(visit);
 
             if let Some(p) = maze.go(&pos, &dir) {
-                if !visited.contains(&p) {
+                if !maze.is_wall(&p) && !visited.contains(&p) {
                     visited.push(p.clone());
 
                     let next = Visit {
