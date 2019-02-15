@@ -63,12 +63,20 @@ impl Maze {
         self.board.len()
     }
 
+    pub fn height_edge(&self) -> usize {
+        self.height() - 1
+    }
+
     pub fn width(&self) -> usize {
         if self.board.is_empty() {
             0
         } else {
             self.board[0].len()
         }
+    }
+
+    pub fn width_edge(&self) -> usize {
+        self.width() - 1
     }
 
     pub fn at(&self, pos: &Pos) -> Part {

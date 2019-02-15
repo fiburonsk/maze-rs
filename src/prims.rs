@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use super::maze::{print_maze, Maze, Part, Pos};
-use super::shared::{self, Progress, Wall};
+use super::shared::{self, Direction, Progress, Wall};
 
 type Row = Vec<Part>;
 type Blocks = Vec<Pos>;
@@ -18,44 +18,28 @@ impl ChangeBoard for Maze {
     }
 }
 
+trait Movement {
+    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos>;
+}
+
+impl Movement for Maze {
+    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos> {
+        match dir {
+            Direction::Up if pos.y > 0 => Some(pos.up()),
+            Direction::Down if pos.y < self.height_edge() => Some(pos.down()),
+            Direction::Right if pos.x < self.width_edge() => Some(pos.right()),
+            Direction::Left if pos.y > 0 => Some(pos.left()),
+            _ => None,
+        }
+    }
+}
+
 fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
-    let mut n = vec![];
-    let max_y = m.height() - 1;
-    let max_x = m.width() - 1;
-
-    let check = |p: &Pos| -> bool { m.is_wall(p) };
-
-    if pos.y > 1 {
-        let up = pos.up();
-        if check(&up) {
-            n.push(up);
-        }
-    }
-
-    if pos.x < max_x {
-        let right = pos.right();
-        if check(&right) {
-            n.push(right);
-        }
-    }
-
-    if pos.y < max_y {
-        let down = pos.down();
-
-        if check(&down) {
-            n.push(down);
-        }
-    }
-
-    if pos.x > 1 {
-        let left = pos.left();
-
-        if check(&left) {
-            n.push(left);
-        }
-    }
-
-    n
+    shared::all_directions()
+        .iter()
+        .filter_map(|dir| m.go(pos, dir))
+        .filter(|p| m.is_wall(p))
+        .collect::<Blocks>()
 }
 
 fn open(m: &mut Maze, pos: &Pos) {
@@ -70,8 +54,8 @@ fn find_cells(pos: &Pos, w: &Wall) -> (Pos, Pos) {
 }
 
 fn check_wall(pos: &Pos, w: &Wall, m: &Maze) -> bool {
-    let max_y = m.height() - 2;
-    let max_x = m.width() - 2;
+    let max_y = m.height_edge() - 1;
+    let max_x = m.width_edge() - 1;
 
     match w {
         Wall::Horizontal => pos.x > 1 && pos.x < max_x,
