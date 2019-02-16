@@ -82,12 +82,12 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             walls.append(&mut walls_for(&next, &maze));
             last = next.clone();
             frontier.push(next);
-        }
 
-        if let Progress::Delay(time) = progress {
-            shared::redraw();
-            print_maze(&maze);
-            thread::sleep(Duration::from_micros(time));
+            if let Progress::Delay(time) = progress {
+                shared::redraw();
+                print_maze(&maze);
+                thread::sleep(Duration::from_micros(time));
+            }
         }
     }
 
