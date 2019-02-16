@@ -1,4 +1,4 @@
-use super::maze::Pos;
+use super::maze::{Maze, Part, Pos};
 
 #[derive(Debug, PartialEq)]
 pub enum Direction {
@@ -50,4 +50,30 @@ pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Po
     let y = usize::max(seed2 % (height - 1), 1);
 
     Pos { x, y }
+}
+
+pub trait ChangeBoard {
+    fn change(&mut self, pos: &Pos, to: Part);
+}
+
+impl ChangeBoard for Maze {
+    fn change(&mut self, pos: &Pos, to: Part) {
+        self.board[pos.y][pos.x] = to;
+    }
+}
+
+pub trait Movement {
+    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos>;
+}
+
+impl Movement for Maze {
+    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos> {
+        match dir {
+            Direction::Up if pos.y > 0 => Some(pos.up()),
+            Direction::Down if pos.y < self.height_edge() => Some(pos.down()),
+            Direction::Right if pos.x < self.width_edge() => Some(pos.right()),
+            Direction::Left if pos.x > 0 => Some(pos.left()),
+            _ => None,
+        }
+    }
 }

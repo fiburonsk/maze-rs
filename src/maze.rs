@@ -1,5 +1,10 @@
 use std::fmt;
 
+use super::shared::Direction;
+
+pub type Row = Vec<Part>;
+pub type Blocks = Vec<Pos>;
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum Part {
     Wall,
@@ -59,6 +64,14 @@ pub struct Maze {
 }
 
 impl Maze {
+    pub fn new_empty(height: usize, width: usize) -> Self {
+        Maze {
+            board: (0..height)
+                .map(|_y| (0..width).map(|_x| Part::Wall).collect::<Row>())
+                .collect::<Vec<Row>>(),
+        }
+    }
+
     pub fn height(&self) -> usize {
         self.board.len()
     }

@@ -1,5 +1,6 @@
+use maze::Blocks;
 use rand;
-use shared::{Direction, Progress};
+use shared::{Direction, Movement, Progress};
 use std::env;
 use std::thread;
 use std::time::Duration;
@@ -9,36 +10,20 @@ mod maze;
 mod prims;
 mod shared;
 
-trait Movement {
-    fn go(&self, pos: &maze::Pos, dir: &Direction) -> Option<maze::Pos>;
-}
-
-impl Movement for maze::Maze {
-    fn go(&self, pos: &maze::Pos, dir: &Direction) -> Option<maze::Pos> {
-        match dir {
-            Direction::Up if pos.y > 0 => Some(pos.up()),
-            Direction::Down if pos.y < self.height_edge() => Some(pos.down()),
-            Direction::Right if pos.x < self.width_edge() => Some(pos.right()),
-            Direction::Left if pos.y > 0 => Some(pos.left()),
-            _ => None,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 struct Visit {
     moves: Vec<Direction>,
     at: maze::Pos,
 }
 
-fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
+fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
     println!("Solve the maze!");
     let start = match maze.start_at() {
         Some(pos) => pos,
         None => return None,
     };
 
-    let mut visited: Vec<maze::Pos> = vec![start.clone()];
+    let mut visited: Blocks = vec![start.clone()];
     let mut visitor = vec![Visit {
         at: start.clone(),
         moves: shared::all_directions(),
@@ -49,10 +34,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Vec<maze::Pos>> {
             break;
         }
 
-        let route = visitor
-            .iter()
-            .map(|v| v.at.clone())
-            .collect::<Vec<maze::Pos>>();
+        let route = visitor.iter().map(|v| v.at.clone()).collect::<Blocks>();
 
         if let Progress::Delay(time) = progress {
             shared::redraw();

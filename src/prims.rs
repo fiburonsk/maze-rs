@@ -2,37 +2,8 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::thread;
 use std::time::Duration;
 
-use super::maze::{print_maze, Maze, Part, Pos};
-use super::shared::{self, Direction, Progress, Wall};
-
-type Row = Vec<Part>;
-type Blocks = Vec<Pos>;
-
-trait ChangeBoard {
-    fn change(&mut self, pos: &Pos, to: Part);
-}
-
-impl ChangeBoard for Maze {
-    fn change(&mut self, pos: &Pos, to: Part) {
-        self.board[pos.y][pos.x] = to;
-    }
-}
-
-trait Movement {
-    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos>;
-}
-
-impl Movement for Maze {
-    fn go(&self, pos: &Pos, dir: &Direction) -> Option<Pos> {
-        match dir {
-            Direction::Up if pos.y > 0 => Some(pos.up()),
-            Direction::Down if pos.y < self.height_edge() => Some(pos.down()),
-            Direction::Right if pos.x < self.width_edge() => Some(pos.right()),
-            Direction::Left if pos.y > 0 => Some(pos.left()),
-            _ => None,
-        }
-    }
-}
+use super::maze::{print_maze, Blocks, Maze, Part, Pos};
+use super::shared::{self, ChangeBoard, Movement, Progress, Wall};
 
 fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
     shared::all_directions()
@@ -83,22 +54,14 @@ fn check_cell(cell: (Pos, Pos), m: &Maze) -> Option<Pos> {
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
     shared::clear_screen();
-    let board = (0..height)
-        .map(|_y| (0..width).map(|_x| Part::Wall).collect::<Row>())
-        .collect::<Vec<Row>>();
-
-    let mut maze = Maze { board: board };
+    let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
-    let start = shared::pick_start(
-        rng.gen::<usize>(),
-        rng.gen::<usize>(),
-        maze.height(),
-        maze.width(),
-    );
+    let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
     let mut frontier: Blocks = vec![start.clone()];
     open(&mut maze, &start);
     let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
+
     while !walls.is_empty() {
         let wall = {
             let index = rng.gen::<usize>() % walls.len();
