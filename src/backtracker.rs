@@ -1,18 +1,11 @@
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
-use std::thread;
-use std::time::Duration;
 
-use super::maze::{print_maze, Blocks, Maze, Part, Pos};
+use super::maze::{Blocks, Maze, Part, Pos};
 use super::shared::{self, ChangeBoard, Direction, Movement, Progress};
-
-fn open(m: &mut Maze, pos: &Pos) {
-    m.change(pos, Part::Open);
-}
 
 fn pick_neighbor(pos: &Pos, m: &Maze, rng: &mut StdRng) -> Option<Direction> {
     let mut directions = shared::all_directions();
     directions.shuffle(rng);
-
     directions.into_iter().find(|dir| {
         m.go(pos, dir)
             .and_then(|w| m.go(&w, dir))
@@ -27,25 +20,21 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
     let mut visited: Blocks = vec![start.clone()];
-    open(&mut maze, &start);
+    maze.open(&start);
     let mut last = start.clone();
 
     while let Some(current) = visited.pop() {
         if let Some(dir) = pick_neighbor(&current, &maze, &mut rng) {
             let wall = maze.go(&current, &dir).unwrap();
+            maze.open(&wall);
             let next = maze.go(&wall, &dir).unwrap();
-            open(&mut maze, &wall);
-            open(&mut maze, &next);
+            maze.open(&next);
             last = next.clone();
 
             visited.push(current);
             visited.push(next);
 
-            if let Progress::Delay(time) = progress {
-                shared::redraw();
-                print_maze(&maze);
-                thread::sleep(Duration::from_micros(time));
-            }
+            shared::draw_board(&maze, &progress);
         }
     }
 

@@ -1,4 +1,6 @@
-use super::maze::{Maze, Part, Pos};
+use super::maze::{print_maze, Maze, Part, Pos};
+use std::thread;
+use std::time::Duration;
 
 #[derive(Debug, PartialEq)]
 pub enum Direction {
@@ -40,6 +42,14 @@ pub fn redraw() {
     print!("{}[0;0f", 27 as char);
 }
 
+pub fn draw_board(maze: &Maze, progress: &Progress) {
+    if let Progress::Delay(time) = progress {
+        redraw();
+        print_maze(maze);
+        thread::sleep(Duration::from_micros(*time));
+    }
+}
+
 pub enum Wall {
     Horizontal,
     Vertical,
@@ -54,11 +64,16 @@ pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Po
 
 pub trait ChangeBoard {
     fn change(&mut self, pos: &Pos, to: Part);
+    fn open(&mut self, pos: &Pos);
 }
 
 impl ChangeBoard for Maze {
     fn change(&mut self, pos: &Pos, to: Part) {
         self.board[pos.y][pos.x] = to;
+    }
+
+    fn open(&mut self, pos: &Pos) {
+        self.change(pos, Part::Open);
     }
 }
 

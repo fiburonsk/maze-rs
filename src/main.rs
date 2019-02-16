@@ -34,9 +34,9 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
             break;
         }
 
-        let route = visitor.iter().map(|v| v.at.clone()).collect::<Blocks>();
-
         if let Progress::Delay(time) = progress {
+            let route = visitor.iter().map(|v| v.at.clone()).collect::<Blocks>();
+
             shared::redraw();
             print_maze_with_solution(maze, &route);
             thread::sleep(Duration::from_micros(time));
@@ -47,7 +47,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
         if maze.is_finished(&visit.at) {
             visitor.push(visit);
 
-            return Some(route);
+            return Some(visitor.iter().map(|v| v.at.clone()).collect());
         }
 
         if !visit.moves.is_empty() {
