@@ -22,6 +22,8 @@ fn print_visited() {
 }
 
 fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
+    shared::draw_board(maze, &progress);
+
     println!("Solve the maze!");
     let start = match maze.start_at() {
         Some(pos) => pos,
@@ -33,8 +35,6 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
         at: start.clone(),
         moves: shared::all_directions(),
     }];
-
-    shared::draw_board(maze, &progress);
 
     loop {
         if visitor.is_empty() {
