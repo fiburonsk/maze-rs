@@ -50,11 +50,6 @@ pub fn draw_board(maze: &Maze, progress: &Progress) {
     }
 }
 
-pub enum Wall {
-    Horizontal,
-    Vertical,
-}
-
 pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Pos {
     let x = usize::max(seed1 % (width - 1), 1);
     let y = usize::max(seed2 % (height - 1), 1);

@@ -1,7 +1,7 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use super::maze::{Blocks, Maze, Part, Pos};
-use super::shared::{self, draw_board, ChangeBoard, Movement, Progress, Wall};
+use super::shared::{self, draw_board, ChangeBoard, Direction, Movement, Progress};
 
 fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
     shared::all_directions()
@@ -11,43 +11,37 @@ fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
         .collect::<Blocks>()
 }
 
-fn open(m: &mut Maze, pos: &Pos) {
-    m.change(pos, Part::Open);
+fn is_wall_horizontal(check: &Pos, start: &Pos) -> bool {
+    check.x % 2 != start.x % 2
 }
 
-fn find_cells(pos: &Pos, w: &Wall) -> (Pos, Pos) {
-    match w {
-        Wall::Horizontal => (pos.left(), pos.right()),
-        Wall::Vertical => (pos.up(), pos.down()),
-    }
-}
-
-fn check_wall(pos: &Pos, w: &Wall, m: &Maze) -> bool {
-    let max_y = m.height_edge() - 1;
-    let max_x = m.width_edge() - 1;
-
-    match w {
-        Wall::Horizontal => pos.x > 1 && pos.x < max_x,
-        Wall::Vertical => pos.y > 1 && pos.y < max_y,
-    }
-}
-
-fn wall_type(pos: &Pos, start: &Pos) -> Wall {
-    if pos.x % 2 != start.x % 2 {
-        Wall::Horizontal
+fn find_next(wall: &Pos, m: &Maze, start: &Pos) -> Option<Pos> {
+    let cells = if is_wall_horizontal(wall, start) {
+        Some((
+            m.go(wall, &(Direction::Left)),
+            m.go(wall, &(Direction::Right)),
+        ))
     } else {
-        Wall::Vertical
-    }
-}
+        Some((m.go(wall, &(Direction::Up)), m.go(wall, &(Direction::Down))))
+    };
 
-fn check_cell(cell: (Pos, Pos), m: &Maze) -> Option<Pos> {
-    if m.is_open(&cell.0) && !m.is_open(&cell.1) {
-        Some(cell.1)
-    } else if m.is_open(&cell.1) && !m.is_open(&cell.0) {
-        Some(cell.0)
-    } else {
-        None
-    }
+    cells
+        .and_then(|c| {
+            if c.0.is_some() && c.1.is_some() {
+                Some((c.0.unwrap(), c.1.unwrap()))
+            } else {
+                None
+            }
+        })
+        .and_then(|c| {
+            if m.is_open(&c.0) && !m.is_open(&c.1) {
+                Some(c.1)
+            } else if m.is_open(&c.1) && !m.is_open(&c.0) {
+                Some(c.0)
+            } else {
+                None
+            }
+        })
 }
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
@@ -56,7 +50,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
     let mut frontier: Blocks = vec![start.clone()];
-    open(&mut maze, &start);
+    maze.open(&start);
     let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
 
@@ -66,23 +60,15 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             walls.remove(index)
         };
 
-        let kind = wall_type(&wall, &start);
-
-        if !check_wall(&wall, &kind, &maze) {
-            continue;
-        }
-
-        let cells = find_cells(&wall, &kind);
-
-        if let Some(next) = check_cell(cells, &maze) {
-            open(&mut maze, &next);
-            open(&mut maze, &wall);
+        if let Some(next) = find_next(&wall, &maze, &start) {
+            maze.open(&next);
+            maze.open(&wall);
             walls.append(&mut walls_for(&next, &maze));
             last = next.clone();
             frontier.push(next);
 
             draw_board(&maze, &progress);
-        }
+        };
     }
 
     maze.change(&start, Part::Start);

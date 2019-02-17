@@ -1,7 +1,5 @@
 use std::fmt;
 
-use super::shared::Direction;
-
 pub type Row = Vec<Part>;
 pub type Blocks = Vec<Pos>;
 
