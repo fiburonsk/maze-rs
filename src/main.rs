@@ -2,6 +2,7 @@ use maze::Blocks;
 use rand;
 use shared::{Direction, Movement, Progress};
 use std::env;
+use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
@@ -14,6 +15,10 @@ mod shared;
 struct Visit {
     moves: Vec<Direction>,
     at: maze::Pos,
+}
+
+fn print_visited() {
+    print!("\x1b[0;33m+\x1b[0m");
 }
 
 fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
@@ -29,20 +34,21 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
         moves: shared::all_directions(),
     }];
 
+    shared::draw_board(maze, &progress);
+
     loop {
         if visitor.is_empty() {
             break;
         }
 
-        if let Progress::Delay(time) = progress {
-            let route = visitor.iter().map(|v| v.at.clone()).collect::<Blocks>();
+        let mut visit = visitor.pop().unwrap();
 
-            shared::redraw();
-            print_maze_with_solution(maze, &route);
+        if let Progress::Delay(time) = progress {
+            shared::draw_at(&visit.at);
+            print_visited();
+            io::stdout().flush().is_ok();
             thread::sleep(Duration::from_micros(time));
         }
-
-        let mut visit = visitor.pop().unwrap();
 
         if maze.is_finished(&visit.at) {
             visitor.push(visit);
@@ -71,6 +77,9 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
                     visitor.push(next);
                 }
             }
+        } else if let Progress::Delay(_time) = progress {
+            shared::draw_at(&visit.at);
+            shared::print_part(&visit.at, &maze);
         }
     }
 
@@ -84,7 +93,7 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
                 && col != &(maze::Part::Finish)
                 && solution.contains(&(maze::Pos { x: x, y: y }))
             {
-                print!("\x1b[0;33m+\x1b[0m");
+                print_visited();
             } else {
                 print!("{}", &col);
             }

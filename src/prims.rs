@@ -2,6 +2,9 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use super::maze::{Blocks, Maze, Part, Pos};
 use super::shared::{self, draw_board, ChangeBoard, Direction, Movement, Progress};
+use std::io::{self, Write};
+use std::thread;
+use std::time::Duration;
 
 fn walls_for(pos: &Pos, m: &Maze) -> Blocks {
     shared::all_directions()
@@ -53,6 +56,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     maze.open(&start);
     let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
+    shared::draw_board(&maze, &progress);
 
     while !walls.is_empty() {
         let wall = {
@@ -64,10 +68,16 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             maze.open(&next);
             maze.open(&wall);
             walls.append(&mut walls_for(&next, &maze));
+
+            if let Progress::Delay(time) = progress {
+                shared::print_part(&wall, &maze);
+                shared::print_part(&next, &maze);
+                io::stdout().flush().is_ok();
+                thread::sleep(Duration::from_micros(time));
+            }
+
             last = next.clone();
             frontier.push(next);
-
-            draw_board(&maze, &progress);
         };
     }
 

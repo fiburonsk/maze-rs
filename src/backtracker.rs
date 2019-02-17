@@ -1,7 +1,9 @@
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
-
 use super::maze::{Blocks, Maze, Part, Pos};
 use super::shared::{self, ChangeBoard, Direction, Movement, Progress};
+use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use std::io::{self, Write};
+use std::thread;
+use std::time::Duration;
 
 fn pick_neighbor(pos: &Pos, m: &Maze, rng: &mut StdRng) -> Option<Direction> {
     let mut directions = shared::all_directions();
@@ -23,6 +25,8 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     maze.open(&start);
     let mut last = start.clone();
 
+    shared::draw_board(&maze, &progress);
+
     while let Some(current) = visited.pop() {
         if let Some(dir) = pick_neighbor(&current, &maze, &mut rng) {
             let wall = maze.go(&current, &dir).unwrap();
@@ -31,10 +35,15 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             maze.open(&next);
             last = next.clone();
 
+            if let Progress::Delay(time) = progress {
+                shared::print_part(&wall, &maze);
+                shared::print_part(&next, &maze);
+                io::stdout().flush().is_ok();
+                thread::sleep(Duration::from_micros(time));
+            }
+
             visited.push(current);
             visited.push(next);
-
-            shared::draw_board(&maze, &progress);
         }
     }
 
