@@ -36,13 +36,7 @@ fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
         moves: shared::all_directions(),
     }];
 
-    loop {
-        if visitor.is_empty() {
-            break;
-        }
-
-        let mut visit = visitor.pop().unwrap();
-
+    while let Some(mut visit) = visitor.pop() {
         if let Progress::Delay(time) = progress {
             shared::draw_at(&visit.at);
             print_visited();

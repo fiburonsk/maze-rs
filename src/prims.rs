@@ -1,7 +1,7 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use super::maze::{Blocks, Maze, Part, Pos};
-use super::shared::{self, draw_board, ChangeBoard, Direction, Movement, Progress};
+use super::shared::{self, ChangeBoard, Direction, Movement, Progress};
 use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
