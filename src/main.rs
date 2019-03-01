@@ -1,84 +1,15 @@
-use maze::Blocks;
-use rand;
-use shared::{Direction, Movement, Progress};
+use shared::Progress;
 use std::env;
-use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
 
 mod backtracker;
+mod backtracker2;
+mod img;
 mod maze;
 mod prims;
+mod prims2;
+mod psolver;
 mod shared;
-
-#[derive(Debug, PartialEq)]
-struct Visit {
-    moves: Vec<Direction>,
-    at: maze::Pos,
-}
-
-fn print_visited() {
-    print!("\x1b[0;33m+\x1b[0m");
-}
-
-fn solve(maze: &maze::Maze, progress: Progress) -> Option<Blocks> {
-    shared::draw_board(maze, &progress);
-
-    println!("Solve the maze!");
-    let start = match maze.start_at() {
-        Some(pos) => pos,
-        None => return None,
-    };
-
-    let mut visited: Blocks = vec![start.clone()];
-    let mut visitor = vec![Visit {
-        at: start.clone(),
-        moves: shared::all_directions(),
-    }];
-
-    while let Some(mut visit) = visitor.pop() {
-        if let Progress::Delay(time) = progress {
-            shared::draw_at(&visit.at);
-            print_visited();
-            io::stdout().flush().is_ok();
-            thread::sleep(Duration::from_micros(time));
-        }
-
-        if maze.is_finished(&visit.at) {
-            visitor.push(visit);
-
-            return Some(visitor.iter().map(|v| v.at.clone()).collect());
-        }
-
-        if !visit.moves.is_empty() {
-            let i = rand::random::<usize>() % visit.moves.len();
-            let dir = visit.moves.remove(i);
-            let pos = &visit.at.clone();
-            visitor.push(visit);
-
-            if let Some(p) = maze.go(&pos, &dir) {
-                if !maze.is_wall(&p) && !visited.contains(&p) {
-                    visited.push(p.clone());
-
-                    let next = Visit {
-                        at: p,
-                        moves: shared::all_directions()
-                            .into_iter()
-                            .filter(|d| *d != shared::opposite_dir(&dir))
-                            .collect(),
-                    };
-
-                    visitor.push(next);
-                }
-            }
-        } else if let Progress::Delay(_time) = progress {
-            shared::draw_at(&visit.at);
-            shared::print_part(&visit.at, &maze);
-        }
-    }
-
-    None
-}
+mod solver;
 
 fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
     for (y, row) in maze.board.iter().enumerate() {
@@ -87,7 +18,7 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
                 && col != &(maze::Part::Finish)
                 && solution.contains(&(maze::Pos { x: x, y: y }))
             {
-                print_visited();
+                shared::print_visited();
             } else {
                 print!("{}", &col);
             }
@@ -128,6 +59,8 @@ fn main() {
 
     let maze = match &args.next() {
         Some(x) if x == "b" => backtracker::generate(seed, height, width, show_build.clone()),
+        Some(x) if x == "b2" => backtracker2::generate(seed, height, width, show_build.clone()),
+        Some(x) if x == "p2" => prims2::generate(seed, height, width, show_build.clone()),
         _ => prims::generate(seed, height, width, show_build.clone()),
     };
 
@@ -136,12 +69,31 @@ fn main() {
         &seed, &height, &width
     );
 
-    if let Some(solution) = solve(&maze, show_solve) {
+    // if let Some(solution) = solver::solve(&maze, &show_solve) {
+    //     shared::draw_reset();
+    //     shared::clear_screen();
+    //     println!("{}", &message);
+    //     maze::print_maze(&maze);
+    //     println!();
+    //     print_maze_with_solution(&maze, &solution);
+
+    // // img::save(&maze, &solution, "maze.png");
+    // } else {
+    //     shared::clear_screen();
+    //     println!("{}", &message);
+    //     maze::print_maze(&maze);
+    //     println!();
+    //     println!("Unable to solve the maze.");
+    // }
+
+    if let Some(solution) = psolver::solve(&maze, &show_solve) {
+        shared::draw_reset();
         shared::clear_screen();
         println!("{}", &message);
         maze::print_maze(&maze);
         println!();
         print_maze_with_solution(&maze, &solution);
+    // img::save(&maze, &solution, "maze.png");
     } else {
         shared::clear_screen();
         println!("{}", &message);
