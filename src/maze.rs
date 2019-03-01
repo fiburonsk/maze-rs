@@ -57,6 +57,7 @@ impl Pos {
     }
 }
 
+#[derive(Clone)]
 pub struct Maze {
     pub board: Vec<Vec<Part>>,
 }
@@ -106,23 +107,9 @@ impl Maze {
         self.at(pos) == Part::Finish
     }
 
-    pub fn is_start(&self, pos: &Pos) -> bool {
-        self.at(pos) == Part::Start
-    }
-
     pub fn start_at(&self) -> Option<Pos> {
         self.board.iter().enumerate().find_map(|(row, cols)| {
             if let Some(found) = cols.iter().position(|col| *col == Part::Start) {
-                return Some(Pos { x: found, y: row });
-            }
-
-            None
-        })
-    }
-
-    pub fn finish_at(&self) -> Option<Pos> {
-        self.board.iter().enumerate().find_map(|(row, cols)| {
-            if let Some(found) = cols.iter().position(|col| *col == Part::Finish) {
                 return Some(Pos { x: found, y: row });
             }
 
