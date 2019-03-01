@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Direction {
     Up,
     Down,
@@ -33,27 +33,6 @@ pub fn opposite_dir(dir: &Direction) -> Direction {
 pub enum Progress {
     Delay(u64),
     None,
-}
-
-pub fn clear_screen() {
-    print!("{}[2J", 27 as char);
-}
-
-pub fn draw_reset() {
-    print!("{}[0;0f", 27 as char);
-}
-
-pub fn draw_at(pos: &Pos) {
-    print!("{}[{};{}f", 27 as char, pos.y + 1, pos.x + 1);
-}
-
-pub fn draw_board(maze: &Maze, progress: &Progress) {
-    if let Progress::Delay(time) = progress {
-        draw_reset();
-        print_maze(maze);
-        io::stdout().flush().is_ok();
-        thread::sleep(Duration::from_micros(*time));
-    }
 }
 
 pub trait ChangeBoard {
@@ -94,7 +73,32 @@ pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Po
     Pos { x, y }
 }
 
+pub fn print_visited() {
+    print!("\x1b[0;33m+\x1b[0m");
+}
+
 pub fn print_part(pos: &Pos, m: &Maze) {
     draw_at(pos);
     print!("{}", m.at(pos));
+}
+
+pub fn clear_screen() {
+    print!("{}[2J", 27 as char);
+}
+
+pub fn draw_reset() {
+    print!("{}[0;0f", 27 as char);
+}
+
+pub fn draw_at(pos: &Pos) {
+    print!("{}[{};{}f", 27 as char, pos.y + 1, pos.x + 1);
+}
+
+pub fn draw_board(maze: &Maze, progress: &Progress) {
+    if let Progress::Delay(time) = progress {
+        draw_reset();
+        print_maze(maze);
+        io::stdout().flush().is_ok();
+        thread::sleep(Duration::from_micros(*time));
+    }
 }
