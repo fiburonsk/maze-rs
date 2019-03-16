@@ -23,12 +23,16 @@ pub fn save(maze: &Maze, solution: &[Pos], name: &str) {
                 Part::Wall => wall,
                 Part::Start => start,
                 Part::Finish => finish,
-                Part::Open if solution.contains(&pos) => visit,
                 Part::Open => path,
             };
 
             *p = c;
         });
+    });
+
+    solution.iter().for_each(|pos| {
+        let p = buf.get_pixel_mut(pos.x as u32, pos.y as u32);
+        *p = visit;
     });
 
     buf.save(name).unwrap();
