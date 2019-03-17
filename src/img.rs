@@ -32,7 +32,9 @@ pub fn save(maze: &Maze, solution: &[Pos], name: &str) {
 
     solution.iter().for_each(|pos| {
         let p = buf.get_pixel_mut(pos.x as u32, pos.y as u32);
-        *p = visit;
+        if let Part::Open = &maze.at(pos) {
+            *p = visit;
+        }
     });
 
     buf.save(name).unwrap();
