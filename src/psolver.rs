@@ -29,11 +29,11 @@ pub fn solve(maze: &Maze, show_solve: &Progress) -> Option<Blocks> {
 }
 
 fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
-    {
-        let p = progress.lock().unwrap();
+    if let Ok(p) = progress.lock() {
         shared::clear_screen();
         shared::draw_board(&maze, &p);
     }
+
     println!("Solve the maze!");
 
     let start = match maze.start_at() {
@@ -48,8 +48,6 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
     let wrk_progress = progress.clone();
     let wrk_maze = maze.clone();
     let mwrk_sender = mtx.clone();
-    let threads: Arc<Mutex<Vec<Option<thread::JoinHandle<_>>>>> = Arc::new(Mutex::new(vec![]));
-    let wrk_threads = threads.clone();
     let work = thread::spawn(move || {
         for recv in wrx.iter() {
             match recv {
@@ -66,17 +64,12 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
                     let thr_maze = wrk_maze.clone();
                     let thr_progress = wrk_progress.clone();
 
-                    let j = thread::spawn(move || {
+                    thread::spawn(move || {
                         solver(branch, thr_sender, &thr_maze, thr_progress);
                     });
-
-                    {
-                        let mut v = wrk_threads.lock().unwrap();
-                        v.push(Some(j));
-                    }
                 }
                 Run::Solution(path) => {
-                    mwrk_sender.send(path).unwrap();
+                    mwrk_sender.send(path).is_ok();
                     break;
                 }
                 _ => break,
@@ -84,18 +77,10 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
         }
     });
 
-    wtx.send(Run::Start(start.clone())).unwrap();
+    wtx.send(Run::Start(start.clone())).is_ok();
     drop(wtx);
 
     work.join().is_ok();
-
-    // Let the threads finish up before moving on.
-    let mut t = threads.lock().unwrap();
-    t.iter_mut().for_each(|some_handle| {
-        if let Some(handle) = some_handle.take() {
-            handle.join().is_ok();
-        }
-    });
 
     if let Ok(path) = mrx.recv() {
         Some(path)
@@ -118,7 +103,7 @@ fn begin(start: Pos, tx: mpsc::Sender<Run>, maze: &Maze) {
                 dir: d,
                 path: vec![start.clone()],
             }))
-            .unwrap()
+            .is_ok();
         });
 }
 
@@ -128,7 +113,7 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
     let path = branch.path.clone();
 
     let prog = {
-        let p = progress.lock().unwrap();
+        let p = progress.lock().expect("Unable to acquire progress lock");
         p.clone()
     };
 
@@ -138,8 +123,7 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
         at = next;
         visited.push(at.clone());
         if let Progress::Delay(time) = prog {
-            {
-                let _p = progress.lock().unwrap();
+            if let Ok(_p) = progress.lock() {
                 shared::draw_at(&at);
                 shared::print_visited();
                 io::stdout().flush().is_ok();
@@ -164,11 +148,10 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
             })
             .collect();
 
-        if moves.is_empty() {
-            break;
-        }
-
-        dir = moves.pop().unwrap();
+        dir = match moves.pop() {
+            Some(p) => p,
+            None => break,
+        };
 
         moves.into_iter().for_each(|d| {
             let mut new_path = path.clone();

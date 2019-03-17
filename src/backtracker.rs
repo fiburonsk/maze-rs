@@ -20,20 +20,20 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     shared::clear_screen();
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
-    let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
+    let first = Pos { x: 0, y: 1 };
+    let start = Pos { x: 1, y: 1 };
     let mut visited: Blocks = vec![start.clone()];
+    maze.open(&first);
     maze.open(&start);
-    let mut last = start.clone();
 
     shared::draw_board(&maze, &progress);
 
     while let Some(current) = visited.pop() {
         if let Some(dir) = pick_neighbor(&current, &maze, &mut rng) {
-            let wall = maze.go(&current, &dir).unwrap();
+            let wall = maze.go(&current, &dir).expect("Should go to direction");
             maze.open(&wall);
-            let next = maze.go(&wall, &dir).unwrap();
+            let next = maze.go(&wall, &dir).expect("Should continue in direction");
             maze.open(&next);
-            last = next.clone();
 
             if let Progress::Delay(time) = progress {
                 shared::print_part(&wall, &maze);
@@ -47,8 +47,8 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
         }
     }
 
-    maze.change(&start, Part::Start);
-    maze.change(&last, Part::Finish);
+    maze.change(&first, Part::Start);
+    maze.change(&shared::pick_end(rng.gen::<usize>(), &maze), Part::Finish);
 
     maze
 }

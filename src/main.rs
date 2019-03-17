@@ -2,7 +2,6 @@ use shared::Progress;
 use std::env;
 
 mod backtracker;
-mod backtracker2;
 mod img;
 mod maze;
 mod prims;
@@ -58,10 +57,9 @@ fn main() {
         .unwrap_or(Progress::None);
 
     let maze = match &args.next() {
-        Some(x) if x == "b" => backtracker::generate(seed, height, width, show_build.clone()),
-        Some(x) if x == "b2" => backtracker2::generate(seed, height, width, show_build.clone()),
+        Some(x) if x == "p" => prims::generate(seed, height, width, show_build.clone()),
         Some(x) if x == "p2" => prims2::generate(seed, height, width, show_build.clone()),
-        _ => prims::generate(seed, height, width, show_build.clone()),
+        _ => backtracker::generate(seed, height, width, show_build.clone()),
     };
 
     let message = format!(
@@ -70,14 +68,14 @@ fn main() {
     );
 
     // if let Some(solution) = solver::solve(&maze, &show_solve) {
-    //     shared::draw_reset();
-    //     shared::clear_screen();
+    //     // shared::draw_reset();
+    //     // shared::clear_screen();
     //     println!("{}", &message);
-    //     maze::print_maze(&maze);
+    //     // maze::print_maze(&maze);
     //     println!();
-    //     print_maze_with_solution(&maze, &solution);
+    //     // print_maze_with_solution(&maze, &solution);
 
-    // // img::save(&maze, &solution, "maze.png");
+    //     img::save(&maze, &solution, "maze.png");
     // } else {
     //     shared::clear_screen();
     //     println!("{}", &message);
@@ -87,18 +85,9 @@ fn main() {
     // }
 
     if let Some(solution) = psolver::solve(&maze, &show_solve) {
-        shared::draw_reset();
-        shared::clear_screen();
         println!("{}", &message);
-        maze::print_maze(&maze);
-        println!();
-        print_maze_with_solution(&maze, &solution);
-    // img::save(&maze, &solution, "maze.png");
+        img::save(&maze, &solution, "maze.png");
     } else {
-        shared::clear_screen();
-        println!("{}", &message);
-        maze::print_maze(&maze);
-        println!();
         println!("Unable to solve the maze.");
     }
 }

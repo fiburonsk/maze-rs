@@ -66,11 +66,18 @@ impl Movement for Maze {
     }
 }
 
-pub fn pick_start(seed1: usize, seed2: usize, height: usize, width: usize) -> Pos {
-    let x = usize::max(seed1 % (width - 1), 1);
-    let y = usize::max(seed2 % (height - 1), 1);
+pub fn pick_end(random: usize, maze: &Maze) -> Pos {
+    let height = maze.height_edge();
+    let width = maze.width_edge();
 
-    Pos { x, y }
+    loop {
+        let y = usize::max(random % height, 1);
+        let p = Pos { x: width, y };
+
+        if maze.is_open(&p) || maze.is_open(&Pos { x: width - 1, y }) {
+            return p;
+        }
+    }
 }
 
 pub fn print_visited() {

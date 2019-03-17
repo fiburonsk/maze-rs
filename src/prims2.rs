@@ -75,9 +75,8 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     shared::clear_screen();
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
-    let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
+    let start = Pos { x: 1, y: 1 };
     maze.open(&start);
-    let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
     shared::draw_board(&maze, &progress);
 
@@ -103,14 +102,13 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
                         thread::sleep(Duration::from_micros(time));
                     }
 
-                    last = next.clone();
                     let dir = find_direction(&wall, &next);
 
                     if let Some(goto) = maze.go(&next, &rand_direction(&mut rng, &dir)) {
                         wall = goto;
-                        return true;
+                        true
                     } else {
-                        return false;
+                        false
                     }
                 } else {
                     false
@@ -120,7 +118,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     }
 
     maze.change(&start, Part::Start);
-    maze.change(&last, Part::Finish);
+    maze.change(&shared::pick_end(rng.gen::<usize>(), &maze), Part::Finish);
 
     maze
 }

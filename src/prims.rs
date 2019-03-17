@@ -51,10 +51,12 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     shared::clear_screen();
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
-    let start = shared::pick_start(rng.gen::<usize>(), rng.gen::<usize>(), height, width);
+    let first = Pos { x: 0, y: 1 };
+    let start = Pos { x: 1, y: 1 };
+
     let mut frontier: Blocks = vec![start.clone()];
+    maze.open(&first);
     maze.open(&start);
-    let mut last = start.clone();
     let mut walls: Blocks = walls_for(&start, &maze);
     shared::draw_board(&maze, &progress);
 
@@ -76,13 +78,12 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
                 thread::sleep(Duration::from_micros(time));
             }
 
-            last = next.clone();
             frontier.push(next);
         };
     }
 
-    maze.change(&start, Part::Start);
-    maze.change(&last, Part::Finish);
+    maze.change(&first, Part::Start);
+    maze.change(&shared::pick_end(rng.gen::<usize>(), &maze), Part::Finish);
 
     maze
 }
