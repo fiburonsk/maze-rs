@@ -20,6 +20,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     if let Progress::Delay(_) = progress {
         shared::clear_screen();
     }
+
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let first = Pos { x: 0, y: 1 };
@@ -50,7 +51,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     }
 
     maze.change(&first, Part::Start);
-    maze.change(&shared::pick_end(rng.gen::<usize>(), &maze), Part::Finish);
+    maze.change(&shared::pick_end(&mut rng, &maze), Part::Finish);
 
     maze
 }

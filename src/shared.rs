@@ -1,4 +1,5 @@
 use super::maze::{print_maze, Maze, Part, Pos};
+use rand::{rngs::StdRng, Rng};
 use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
@@ -66,12 +67,12 @@ impl Movement for Maze {
     }
 }
 
-pub fn pick_end(random: usize, maze: &Maze) -> Pos {
+pub fn pick_end(rng: &mut StdRng, maze: &Maze) -> Pos {
     let height = maze.height_edge();
     let width = maze.width_edge();
 
     loop {
-        let y = usize::max(random % height, 1);
+        let y = usize::max(rng.gen::<usize>() % height, 1);
         let p = Pos { x: width, y };
 
         if maze.is_open(&p) || maze.is_open(&Pos { x: width - 1, y }) {

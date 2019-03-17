@@ -117,7 +117,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     }
 
     maze.change(&start, Part::Start);
-    maze.change(&shared::pick_end(rng.gen::<usize>(), &maze), Part::Finish);
+    maze.change(&shared::pick_end(&mut rng, &maze), Part::Finish);
 
     maze
 }
