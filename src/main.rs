@@ -86,6 +86,14 @@ fn main() {
     // }
 
     if let Some(solution) = psolver::solve(&maze, &show_solve) {
+        if let Progress::Delay(_t) = &show_solve {
+            shared::draw_reset();
+            shared::clear_screen();
+            println!("{}", &message);
+            maze::print_maze(&maze);
+            println!();
+            print_maze_with_solution(&maze, &solution);
+        }
         img::save(&maze, &solution, "maze.png");
     } else {
         println!("Unable to solve the maze.");

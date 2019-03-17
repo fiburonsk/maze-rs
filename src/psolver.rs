@@ -32,11 +32,12 @@ pub fn solve(maze: &Maze, show_solve: &Progress) -> Option<Blocks> {
 
 fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
     if let Ok(p) = progress.lock() {
-        shared::clear_screen();
-        shared::draw_board(&maze, &p);
+        if let Progress::Delay(_t) = *p {
+            shared::clear_screen();
+            shared::draw_board(&maze, &p);
+            println!("Solve the maze!");
+        }
     }
-
-    println!("Solve the maze!");
 
     let start = match maze.start_at() {
         Some(pos) => pos,
