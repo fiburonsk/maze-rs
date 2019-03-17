@@ -71,8 +71,9 @@ fn find_next(wall: &Pos, m: &Maze, start: &Pos) -> Option<Pos> {
 }
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
-    let mut count: usize = 1;
-    shared::clear_screen();
+    if let Progress::Delay(_) = progress {
+        shared::clear_screen();
+    }
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let start = Pos { x: 1, y: 1 };
@@ -92,8 +93,6 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
                     maze.open(&next);
                     maze.open(&wall);
                     walls.append(&mut walls_for(&next, &maze));
-
-                    count += 1;
 
                     if let Progress::Delay(time) = progress {
                         shared::print_part(&wall, &maze);

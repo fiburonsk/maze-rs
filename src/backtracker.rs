@@ -17,7 +17,9 @@ fn pick_neighbor(pos: &Pos, m: &Maze, rng: &mut StdRng) -> Option<Direction> {
 }
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
-    shared::clear_screen();
+    if let Progress::Delay(_) = progress {
+        shared::clear_screen();
+    }
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let first = Pos { x: 0, y: 1 };
