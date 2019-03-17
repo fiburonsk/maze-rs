@@ -5,6 +5,8 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use super::threadpool;
+
 enum Run {
     Start(Pos),
     Solve(Branch),
@@ -49,6 +51,8 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
     let wrk_maze = maze.clone();
     let mwrk_sender = mtx.clone();
     let work = thread::spawn(move || {
+        let pool = threadpool::ThreadPool::new(16);
+
         for recv in wrx.iter() {
             match recv {
                 Run::Start(pos) => {
@@ -64,7 +68,7 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
                     let thr_maze = wrk_maze.clone();
                     let thr_progress = wrk_progress.clone();
 
-                    thread::spawn(move || {
+                    pool.execute(move || {
                         solver(branch, thr_sender, &thr_maze, thr_progress);
                     });
                 }

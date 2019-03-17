@@ -9,6 +9,7 @@ mod prims2;
 mod psolver;
 mod shared;
 mod solver;
+mod threadpool;
 
 fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
     for (y, row) in maze.board.iter().enumerate() {
@@ -85,7 +86,6 @@ fn main() {
     // }
 
     if let Some(solution) = psolver::solve(&maze, &show_solve) {
-        println!("{}", &message);
         img::save(&maze, &solution, "maze.png");
     } else {
         println!("Unable to solve the maze.");
