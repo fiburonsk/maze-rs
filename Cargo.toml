@@ -11,3 +11,6 @@ image = "0.21.0"
 [[bin]]
 name = "maze"
 path = "src/main.rs"
+
+[profile.release]
+lto = true
