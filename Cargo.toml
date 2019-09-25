@@ -5,12 +5,9 @@ authors = ["fiburonsk <10441670+fiburonsk@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-rand = "0.6.5"
-image = "0.21.0"
+rand = "0.7.2"
+image = "0.22.2"
 
 [[bin]]
 name = "maze"
 path = "src/main.rs"
-
-[profile.release]
-lto = true
