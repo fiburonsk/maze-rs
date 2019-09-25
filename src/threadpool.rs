@@ -16,7 +16,7 @@ impl<F: FnOnce()> FnBox for F {
     }
 }
 
-type Job = Box<FnBox + Send + 'static>;
+type Job = Box<dyn FnBox + Send + 'static>;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
@@ -31,8 +31,8 @@ impl ThreadPool {
 
         let receiver = Arc::new(Mutex::new(receiver));
 
-        for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&receiver)));
+        for _id in 0..size {
+            workers.push(Worker::new(Arc::clone(&receiver)));
         }
 
         ThreadPool { workers, sender }
@@ -63,12 +63,11 @@ impl Drop for ThreadPool {
 }
 
 struct Worker {
-    id: usize,
     thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
+    fn new(receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             let message = receiver.lock().unwrap().recv().unwrap();
 
@@ -81,7 +80,6 @@ impl Worker {
         });
 
         Worker {
-            id,
             thread: Some(thread),
         }
     }
