@@ -11,7 +11,6 @@ enum Run {
     Start(Pos),
     Solve(Branch),
     Solution(Blocks),
-    None,
 }
 
 struct Branch {
@@ -74,18 +73,17 @@ fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
                     });
                 }
                 Run::Solution(path) => {
-                    mwrk_sender.send(path).is_ok();
+                    mwrk_sender.send(path).unwrap();
                     break;
                 }
-                _ => break,
             }
         }
     });
 
-    wtx.send(Run::Start(start.clone())).is_ok();
+    wtx.send(Run::Start(start.clone())).unwrap();
     drop(wtx);
 
-    work.join().is_ok();
+    work.join().unwrap();
 
     if let Ok(path) = mrx.recv() {
         Some(path)
@@ -108,7 +106,7 @@ fn begin(start: Pos, tx: mpsc::Sender<Run>, maze: &Maze) {
                 dir: d,
                 path: vec![start.clone()],
             }))
-            .is_ok();
+            .unwrap();
         });
 }
 
@@ -131,7 +129,7 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
             if let Ok(_p) = progress.lock() {
                 shared::draw_at(&at);
                 shared::print_visited();
-                io::stdout().flush().is_ok();
+                io::stdout().flush().unwrap();
             }
             thread::sleep(Duration::from_micros(time));
         }
@@ -139,7 +137,7 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
         if maze.is_finished(&at) {
             let mut new_path = path.clone();
             new_path.append(&mut visited.clone());
-            tx.send(Run::Solution(new_path)).is_ok();
+            tx.send(Run::Solution(new_path)).unwrap();
         }
 
         let mut moves: Vec<Direction> = shared::all_directions()
@@ -167,7 +165,7 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
                 dir: d,
                 path: new_path,
             }))
-            .is_ok();
+            .unwrap();
         });
     }
 }

@@ -76,7 +76,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             if let Progress::Delay(time) = progress {
                 shared::print_part(&wall, &maze);
                 shared::print_part(&next, &maze);
-                io::stdout().flush().is_ok();
+                io::stdout().flush().unwrap();
                 thread::sleep(Duration::from_micros(time));
             }
 

@@ -33,7 +33,7 @@ pub fn solve(maze: &maze::Maze, progress: &Progress) -> Option<Blocks> {
         if let Progress::Delay(time) = progress {
             shared::draw_at(&visit.at);
             shared::print_visited();
-            io::stdout().flush().is_ok();
+            io::stdout().flush().unwrap();
             thread::sleep(Duration::from_micros(*time));
         }
 

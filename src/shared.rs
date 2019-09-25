@@ -106,7 +106,7 @@ pub fn draw_board(maze: &Maze, progress: &Progress) {
     if let Progress::Delay(time) = progress {
         draw_reset();
         print_maze(maze);
-        io::stdout().flush().is_ok();
+        io::stdout().flush().unwrap();
         thread::sleep(Duration::from_micros(*time));
     }
 }
