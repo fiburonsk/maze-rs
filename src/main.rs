@@ -6,8 +6,8 @@ mod img;
 mod maze;
 mod prims;
 mod prims2;
-mod psolver;
 mod shared;
+mod solver;
 mod threadpool;
 
 fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
@@ -67,7 +67,7 @@ fn main() {
         &seed, &height, &width
     );
 
-    if let Some(solution) = psolver::solve(&maze, &show_solve) {
+    if let Some(solution) = solver::solve(&maze, &show_solve) {
         if let Progress::Delay(_t) = &show_solve {
             shared::draw_reset();
             shared::clear_screen();
