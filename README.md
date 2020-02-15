@@ -8,24 +8,18 @@
 ## Usage
 
 ```bash
-Maze generation and solving application.
+Usage: ./maze [-r <seed>] [-h <height>] [-w <width>] [-s <solve-speed>] [-b <build-speed>] [-m <method>] [-i <image>]
 
-USAGE:
-    maze [OPTIONS]
+Maze solving application.
 
-FLAGS:
-        --help       Prints help information
-    -V, --version    Prints version information
-
-OPTIONS:
-    -b, --build-speed <build>    Set the build speed. Lower is faster. A value of zero will not show building the maze.
-                                 [default: 0]
-    -h, --height <height>        Height of maze. Use odd numbers for a wall on the border. [default: 11]
-    -i, --image <image>          Save the solved maze as a .png image.  Provide the path and filename to save an image.
-    -m, --method <method>        Maze generation method. [default: backtracker]  [possible values: backtracker, prims,
-                                 prims-backtracker]
-    -r, --seed <seed>            Seed used by the random number generator to build the maze. [default: 1]
-    -s, --solve-speed <solve>    Set the solve speed. Lower is faster. A value of zero will not show solving the maze.
-                                 [default: 0]
-    -w, --width <width>          Width of maze, Use odd numbers for a wall on the border. [default: 11]
+Options:
+  -r, --seed        seed used to build the maze [default: 1]
+  -h, --height      height [default: 11]
+  -w, --width       width [default: 11]
+  -s, --solve-speed solve speed use 0 to hide [default: 0]
+  -b, --build-speed build speed use 0 to hide [default: 0]
+  -m, --method      solving method: [backtracker, prims, prims-backtracker]
+                    [default: backtracker]
+  -i, --image       save result to image
+  --help            display usage information
 ```

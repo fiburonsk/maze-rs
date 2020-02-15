@@ -39,21 +39,31 @@ impl FromStr for Strategy {
 struct CommandLine {
     #[argh(
         option,
-        description = "seed used to build the maze",
+        description = "seed used to build the maze [default: 1]",
         short = 'r',
         default = "1"
     )]
     seed: usize,
 
-    #[argh(option, description = "height", short = 'h', default = "11")]
+    #[argh(
+        option,
+        description = "height [default: 11]",
+        short = 'h',
+        default = "11"
+    )]
     height: usize,
 
-    #[argh(option, description = "width", short = 'w', default = "11")]
+    #[argh(
+        option,
+        description = "width [default: 11]",
+        short = 'w',
+        default = "11"
+    )]
     width: usize,
 
     #[argh(
         option,
-        description = "solve speed use 0 to hide",
+        description = "solve speed use 0 to hide [default: 0]",
         short = 's',
         default = "0"
     )]
@@ -61,7 +71,7 @@ struct CommandLine {
 
     #[argh(
         option,
-        description = "build speed use 0 to hide",
+        description = "build speed use 0 to hide [default: 0]",
         short = 'b',
         default = "0"
     )]
@@ -69,7 +79,7 @@ struct CommandLine {
 
     #[argh(
         option,
-        description = "solving method: [backtracker, prims, prims-backtracker]",
+        description = "solving method: [backtracker, prims, prims-backtracker] [default: backtracker]",
         short = 'm',
         default = "Strategy::Backtracker"
     )]
