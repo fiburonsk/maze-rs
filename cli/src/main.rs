@@ -1,16 +1,17 @@
 use argh::FromArgs;
-use shared::Progress;
+use shared::{print_maze, CliPart, Progress};
 use std::env;
 use std::str::FromStr;
 
 mod backtracker;
 mod img;
-mod maze;
 mod prims;
 mod prims2;
 mod shared;
 mod solver;
 mod threadpool;
+
+use maze::maze;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -90,18 +91,18 @@ struct CommandLine {
 }
 
 fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
-    for (y, row) in maze.board.iter().enumerate() {
-        for (x, col) in row.iter().enumerate() {
-            if col != &(maze::Part::Start)
-                && col != &(maze::Part::Finish)
-                && solution.contains(&(maze::Pos { x: x, y: y }))
-            {
-                shared::print_visited();
-            } else {
-                print!("{}", &col);
-            }
+    let width = maze.width();
+    for (index, part) in maze.board.iter().enumerate() {
+        if index % width == 0 {
+            println!()
         }
-        println!();
+        let pos = maze.to_pos(index);
+        if part != &(maze::Part::Start) && part != &(maze::Part::Finish) && solution.contains(&pos)
+        {
+            shared::print_visited();
+        } else {
+            print!("{}", CliPart::new(*part));
+        }
     }
 }
 
@@ -135,7 +136,7 @@ fn main() {
                 "Maze: [seed: {}, height: {}, width: {}]",
                 &matches.seed, &matches.height, &matches.width
             );
-            maze::print_maze(&maze);
+            print_maze(&maze);
             println!();
             print_maze_with_solution(&maze, &solution);
         }

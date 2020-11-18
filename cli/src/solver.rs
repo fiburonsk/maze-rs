@@ -1,5 +1,5 @@
-use super::maze::{Blocks, Maze, Pos};
 use super::shared::{self, Direction, Movement, Progress};
+use maze::maze::{Blocks, Maze, Pos};
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
