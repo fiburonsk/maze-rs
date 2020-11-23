@@ -1,12 +1,8 @@
-use super::print;
-use maze_lib::{
+use super::{
     maze::{Blocks, Maze, Part, Pos},
-    shared::{self, ChangeBoard, Direction, Movement, Progress},
+    shared::{self, ChangeBoard, Direction, Movement},
 };
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
-use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
 
 fn pick_neighbor(pos: &Pos, m: &Maze, rng: &mut StdRng) -> Option<Direction> {
     let mut directions = shared::all_directions();
@@ -19,11 +15,7 @@ fn pick_neighbor(pos: &Pos, m: &Maze, rng: &mut StdRng) -> Option<Direction> {
     })
 }
 
-pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
-    if let Progress::Delay(_) = progress {
-        print::clear_screen();
-    }
-
+pub fn generate(seed: usize, height: usize, width: usize) -> Maze {
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
     let first = Pos { x: 0, y: 1 };
@@ -32,22 +24,12 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     maze.open(&first);
     maze.open(&start);
 
-    print::draw_board(&maze, &progress);
-
     while let Some(current) = visited.pop() {
         if let Some(dir) = pick_neighbor(&current, &maze, &mut rng) {
             let wall = maze.go(&current, &dir).expect("Should go to direction");
             maze.open(&wall);
             let next = maze.go(&wall, &dir).expect("Should continue in direction");
             maze.open(&next);
-
-            if let Progress::Delay(time) = progress {
-                print::print_part(&wall, &maze);
-                print::print_part(&next, &maze);
-                io::stdout().flush().unwrap();
-                thread::sleep(Duration::from_micros(time));
-            }
-
             visited.push(current);
             visited.push(next);
         }
@@ -57,4 +39,17 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     maze.change(&shared::pick_end(&mut rng, &maze), Part::Finish);
 
     maze
+}
+
+pub fn step(maze: &Maze, rng: &mut StdRng, pos: &Pos) -> Option<(Pos, Pos)> {
+    if let Some(dir) = pick_neighbor(pos, maze, rng) {
+        let wall = maze.go(pos, &dir).expect("Should go to direction");
+        // maze.open(&wall);
+        let next = maze.go(&wall, &dir).expect("Should continue in direction");
+        // maze.open(&next);
+
+        Some((wall, next))
+    } else {
+        None
+    }
 }

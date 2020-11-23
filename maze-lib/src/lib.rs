@@ -1,4 +1,6 @@
+pub mod backtracker;
 pub mod maze;
+pub mod shared;
 
 #[cfg(test)]
 mod tests {

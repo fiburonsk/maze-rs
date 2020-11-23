@@ -1,7 +1,10 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
-use super::shared::{self, ChangeBoard, Direction, Movement, Progress};
-use maze::maze::{Blocks, Maze, Part, Pos};
+use super::print;
+use maze_lib::{
+    maze::{Blocks, Maze, Part, Pos},
+    shared::{self, ChangeBoard, Direction, Movement, Progress},
+};
 use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
@@ -49,7 +52,7 @@ fn find_next(wall: &Pos, m: &Maze, start: &Pos) -> Option<Pos> {
 
 pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) -> Maze {
     if let Progress::Delay(_) = progress {
-        shared::clear_screen();
+        print::clear_screen();
     }
     let mut maze = Maze::new_empty(height, width);
     let mut rng: StdRng = SeedableRng::seed_from_u64(seed as u64);
@@ -60,7 +63,7 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
     maze.open(&first);
     maze.open(&start);
     let mut walls: Blocks = walls_for(&start, &maze);
-    shared::draw_board(&maze, &progress);
+    print::draw_board(&maze, &progress);
 
     while !walls.is_empty() {
         let wall = {
@@ -74,8 +77,8 @@ pub fn generate(seed: usize, height: usize, width: usize, progress: Progress) ->
             walls.append(&mut walls_for(&next, &maze));
 
             if let Progress::Delay(time) = progress {
-                shared::print_part(&wall, &maze);
-                shared::print_part(&next, &maze);
+                print::print_part(&wall, &maze);
+                print::print_part(&next, &maze);
                 io::stdout().flush().unwrap();
                 thread::sleep(Duration::from_micros(time));
             }

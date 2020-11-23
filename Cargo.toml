@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "maze",
+  "maze-lib",
   "cli",
-  "web"
+  "maze-web"
 ]

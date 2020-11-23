@@ -1,5 +1,5 @@
 use image;
-use maze::maze::{Maze, Part, Pos};
+use maze_lib::maze::{Maze, Part, Pos};
 
 pub fn save(maze: &Maze, solution: &[Pos], name: &str) {
     let imgx = maze.width() as u32;

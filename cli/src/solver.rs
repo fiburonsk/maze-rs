@@ -1,11 +1,13 @@
-use super::shared::{self, Direction, Movement, Progress};
-use maze::maze::{Blocks, Maze, Pos};
+use super::print;
+use super::threadpool;
+use maze_lib::{
+    maze::{Blocks, Maze, Pos},
+    shared::{self, Direction, Movement, Progress},
+};
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-
-use super::threadpool;
 
 enum Run {
     Start(Pos),
@@ -32,8 +34,8 @@ pub fn solve(maze: &Maze, show_solve: &Progress) -> Option<Blocks> {
 fn run(maze: Arc<Maze>, progress: Arc<Mutex<Progress>>) -> Option<Blocks> {
     if let Ok(p) = progress.lock() {
         if let Progress::Delay(_t) = *p {
-            shared::clear_screen();
-            shared::draw_board(&maze, &p);
+            print::clear_screen();
+            print::draw_board(&maze, &p);
             println!("Solve the maze!");
         }
     }
@@ -127,8 +129,8 @@ fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze, progress: Arc<Mute
         visited.push(at.clone());
         if let Progress::Delay(time) = prog {
             if let Ok(_p) = progress.lock() {
-                shared::draw_at(&at);
-                shared::print_visited();
+                print::draw_at(&at);
+                print::print_visited();
                 io::stdout().flush().unwrap();
             }
             thread::sleep(Duration::from_micros(time));

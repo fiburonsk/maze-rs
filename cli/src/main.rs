@@ -1,5 +1,6 @@
 use argh::FromArgs;
-use shared::{print_maze, CliPart, Progress};
+use maze_lib::{maze, shared::Progress};
+use print::{clear_screen, draw_reset, print_maze, print_visited, CliPart};
 use std::env;
 use std::str::FromStr;
 
@@ -7,11 +8,9 @@ mod backtracker;
 mod img;
 mod prims;
 mod prims2;
-mod shared;
+mod print;
 mod solver;
 mod threadpool;
-
-use maze::maze;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -99,7 +98,7 @@ fn print_maze_with_solution(maze: &maze::Maze, solution: &[maze::Pos]) {
         let pos = maze.to_pos(index);
         if part != &(maze::Part::Start) && part != &(maze::Part::Finish) && solution.contains(&pos)
         {
-            shared::print_visited();
+            print_visited();
         } else {
             print!("{}", CliPart::new(*part));
         }
@@ -130,8 +129,8 @@ fn main() {
 
     if let Some(solution) = solver::solve(&maze, &show_solve) {
         if let Progress::Delay(_t) = &show_solve {
-            shared::draw_reset();
-            shared::clear_screen();
+            draw_reset();
+            clear_screen();
             println!(
                 "Maze: [seed: {}, height: {}, width: {}]",
                 &matches.seed, &matches.height, &matches.width
