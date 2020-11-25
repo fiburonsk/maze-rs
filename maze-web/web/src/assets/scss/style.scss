@@ -1,0 +1,46 @@
+html, body {
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+#app {
+  height: 100vh;
+  position: relative;
+  display: grid;
+  grid-template-areas:
+  'nav'
+  'body';
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+
+}
+#body {
+  position: relative;
+  display: grid;
+  grid-template-areas:
+  'left main';
+  grid-template-rows: 1fr;
+  grid-template-columns: auto 1fr;
+}
+
+#nav {
+  position: relative;
+  grid-area: nav;
+}
+
+#body {
+  grid-area: body;
+  position: relative;
+}
+
+#left {
+  grid-area: left;
+  border-right: 2px solid #000000;
+  position: relative;
+}
+
+#main {
+  grid-area: main;
+  position: relative;
+}
