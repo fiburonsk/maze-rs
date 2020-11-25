@@ -1,182 +1,93 @@
 use rand::{rngs::StdRng, Rng};
 
 use maze_lib::{
-    maze::{Blocks, Maze, Pos},
+    maze::{Maze, Pos},
     shared::{self, Direction, Movement},
 };
 
 use std::vec::Vec;
 
-enum Run {
-    Start(Pos),
-    Solve(Branch),
-    Solution(Blocks),
-}
-
-struct Branch {
-    at: Pos,
-    dir: Direction,
-    path: Vec<Pos>,
+pub enum Path {
+    Solved,
+    Cell(usize),
+    None,
 }
 
 #[derive(Debug, PartialEq)]
-struct Visit {
+pub struct Visit {
     moves: Vec<Direction>,
-    at: Pos,
+    pub at: Pos,
 }
 
-pub fn solve(maze: &Maze) -> Option<Vec<usize>> {
-    let start = match maze.start_at() {
-        Some(pos) => pos,
-        None => return None,
+pub fn solve_tick(
+    maze: &Maze,
+    rng: &mut StdRng,
+    visited: &mut Vec<usize>,
+    visitor: &mut Vec<Visit>,
+) -> Path {
+    let current = if visited.is_empty() {
+        maze.start_at().and_then(|pos| {
+            Some(Visit {
+                at: pos,
+                moves: shared::all_directions(),
+            })
+        })
+    } else {
+        visitor.pop()
     };
 
-    let mut visited: Blocks = vec![start.clone()];
-    let mut visitor = vec![Visit {
-        at: start.clone(),
-        moves: shared::all_directions(),
-    }];
-
-    while let Some(mut visit) = visitor.pop() {
+    if let Some(mut visit) = current {
         if maze.is_finished(&visit.at) {
             visitor.push(visit);
 
-            return Some(visitor.iter().map(|v| maze.pos_to_index(&v.at)).collect());
+            return Path::Solved;
         }
 
-        if !visit.moves.is_empty() {
-            let i = rand::random::<usize>() % visit.moves.len();
-            let dir = visit.moves.remove(i);
-            let pos = &visit.at.clone();
-            visitor.push(visit);
+        if visit.moves.is_empty() {
+            return Path::None;
+        }
 
-            if let Some(p) = maze.go(&pos, &dir) {
-                if !maze.is_wall(&p) && !visited.contains(&p) {
-                    visited.push(p.clone());
+        let dir = visit
+            .moves
+            .clone()
+            .into_iter()
+            .find(|d| match maze.go(&visit.at, d) {
+                Some(next) => maze.is_finished(&next),
+                _ => false,
+            })
+            .unwrap_or_else(|| {
+                let i = rng.gen::<usize>() % visit.moves.len();
+                visit.moves.remove(i)
+            });
 
-                    let next = Visit {
-                        at: p,
-                        moves: shared::all_directions()
-                            .into_iter()
-                            .filter(|d| *d != shared::opposite_dir(&dir))
-                            .collect(),
-                    };
+        let pos = &visit.at.clone();
+        visitor.push(visit);
 
-                    visitor.push(next);
-                }
+        if let Some(p) = maze.go(&pos, &dir) {
+            let index = maze.pos_to_index(&p);
+            if !maze.is_wall(&p) && !visited.contains(&index) {
+                visited.push(index);
+
+                let next = Visit {
+                    moves: shared::all_directions()
+                        .into_iter()
+                        .filter(|d| {
+                            *d != shared::opposite_dir(&dir)
+                                && match maze.go(&p, d) {
+                                    Some(new) if !maze.is_wall(&new) => true,
+                                    _ => false,
+                                }
+                        })
+                        .collect(),
+                    at: p,
+                };
+
+                visitor.push(next);
+
+                return Path::Cell(index);
             }
         }
     }
 
-    None
+    Path::None
 }
-
-// pub fn solve(maze: &Maze) -> Option<Blocks> {
-//     let start = match maze.start_at() {
-//         Some(pos) => pos,
-//         None => return None,
-//     };
-
-//     let mut moves = begin(start, maze);
-//     let mut visited: Blocks = vec![];
-
-//     while false == moves.is_empty() {
-//         let next = match moves.pop() {
-//             Some(branch) => branch,
-//             None => break,
-//         };
-
-//         maze.go(next.at, next.dir);
-//     }
-// }
-
-// fn run(maze: &Maze) -> Option<Blocks> {
-//     let start = match maze.start_at() {
-//         Some(pos) => pos,
-//         None => return None,
-//     };
-
-//     let mut status = Run::Start(start);
-
-//     loop {
-//         match status {
-//             Run::Start(pos) => {
-//                 status = begin(pos, maze);
-//             }
-//             Run::Solve(branch) => {
-//                 status = solver(branch, maze);
-//             }
-//             Run::Solution(path) => {
-//                 break;
-//             }
-//         };
-//     }
-
-//     match status {
-//         Run::Solution(path) => Some(path),
-//         _ => None,
-//     }
-// }
-
-fn begin(start: Pos, maze: &Maze) -> Vec<Branch> {
-    shared::all_directions()
-        .into_iter()
-        .filter(|d| {
-            maze.go(&start, &d)
-                .and_then(|p| if !maze.is_wall(&p) { Some(()) } else { None })
-                .is_some()
-        })
-        .map(|d| Branch {
-            at: start.clone(),
-            dir: d,
-            path: vec![start.clone()],
-        })
-        .collect()
-}
-
-// fn solver(branch: Branch, tx: mpsc::Sender<Run>, maze: &Maze) {
-//     let mut at = branch.at.clone();
-//     let mut dir = branch.dir;
-//     let path = branch.path.clone();
-
-//     let mut visited: Blocks = vec![];
-
-//     while let Some(next) = maze.go(&at, &dir) {
-//         at = next;
-//         visited.push(at.clone());
-
-//         if maze.is_finished(&at) {
-//             let mut new_path = path.clone();
-//             new_path.append(&mut visited.clone());
-//             tx.send(Run::Solution(new_path)).unwrap();
-//         }
-
-//         let mut moves: Vec<Direction> = shared::all_directions()
-//             .into_iter()
-//             .filter(|d| {
-//                 *d != shared::opposite_dir(&dir)
-//                     && maze
-//                         .go(&at, &d)
-//                         .and_then(|p| if !maze.is_wall(&p) { Some(()) } else { None })
-//                         .is_some()
-//             })
-//             .collect();
-
-//         dir = match moves.pop() {
-//             Some(p) => p,
-//             None => break,
-//         };
-
-//         moves.into_iter().for_each(|d| {
-//             let mut new_path = path.clone();
-//             new_path.append(&mut visited.clone());
-
-//             tx.send(Run::Solve(Branch {
-//                 at: at.clone(),
-//                 dir: d,
-//                 path: new_path,
-//             }))
-//             .unwrap();
-//         });
-//     }
-// }

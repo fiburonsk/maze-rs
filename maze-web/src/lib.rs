@@ -2,7 +2,7 @@ extern crate web_sys;
 
 mod utils;
 
-use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+use rand::{rngs::StdRng, SeedableRng};
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -11,22 +11,12 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// #[wasm_bindgen]
-// extern "C" {
-//     fn alert(s: &str);
-// }
-
-// #[wasm_bindgen]
-// pub fn greet() {
-//     alert("Hello hello hello, maze-web!");
-// }
-
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::error_1(&format!( $( $t )* ).into());
-    }
-}
+// macro_rules! log {
+//     ( $( $t:tt )* ) => {
+//         web_sys::console::error_1(&format!( $( $t )* ).into());
+//     }
+// }
 
 mod solver;
 
@@ -43,12 +33,6 @@ pub fn get_parts() -> std::vec::Vec<u8> {
 }
 
 #[wasm_bindgen]
-pub struct Loc {
-    x: u32,
-    y: u32,
-}
-
-#[wasm_bindgen]
 pub struct App {
     seed: usize,
     maze: maze::Maze,
@@ -58,6 +42,8 @@ pub struct App {
     build_rng: StdRng,
     solve_rng: StdRng,
     visited: Vec<usize>,
+    visitor: Vec<solver::Visit>,
+    is_solved: bool,
 }
 
 #[wasm_bindgen]
@@ -73,6 +59,8 @@ impl App {
             build_rng: SeedableRng::seed_from_u64(seed as u64),
             solve_rng: SeedableRng::seed_from_u64(seed as u64),
             visited: vec![],
+            visitor: vec![],
+            is_solved: false,
         }
     }
 
@@ -80,9 +68,13 @@ impl App {
         self.is_built
     }
 
-    pub fn build_tick(&mut self) {
+    pub fn is_solved(&self) -> bool {
+        self.is_solved
+    }
+
+    pub fn build_tick(&mut self) -> Vec<usize> {
         if true == self.is_built {
-            return;
+            return vec![];
         }
 
         if false == self.is_build_started {
@@ -93,40 +85,58 @@ impl App {
             self.maze.open(&start);
             self.build_visited.push(start.clone());
 
-            return;
+            return vec![
+                self.maze.pos_to_index(&first),
+                self.maze.pos_to_index(&start),
+            ];
         }
 
         if let Some(pos) = self.build_visited.pop() {
             if let Some((wall, next)) = backtracker::step(&self.maze, &mut self.build_rng, &pos) {
                 self.maze.open(&wall);
                 self.maze.open(&next);
+
+                let new = vec![self.maze.pos_to_index(&wall), self.maze.pos_to_index(&next)];
+
                 self.build_visited.push(pos);
                 self.build_visited.push(next);
 
-                return;
+                return new;
             };
         };
 
         if self.build_visited.is_empty() {
-            self.maze
-                .change(&maze::Pos { x: 0, y: 1 }, maze::Part::Start);
-            self.maze.change(
-                &pick_end(&mut self.build_rng, &self.maze),
-                maze::Part::Finish,
-            );
+            let start = maze::Pos { x: 0, y: 1 };
+            let end = pick_end(&mut self.build_rng, &self.maze);
+            self.maze.change(&start, maze::Part::Start);
+            self.maze.change(&end, maze::Part::Finish);
+
             self.is_built = true;
+
+            return vec![self.maze.pos_to_index(&start), self.maze.pos_to_index(&end)];
         }
+
+        vec![]
     }
 
-    pub fn solve_tick(&self) {
-        if false == self.is_built() {
-            return;
+    pub fn solve_tick(&mut self) -> Vec<usize> {
+        if false == self.is_built() || true == self.is_solved() {
+            return vec![];
         }
 
-        // let start = match maze.start_at() {
-        //     Some(pos) => pos,
-        //     None => return None,
-        // };
+        match solver::solve_tick(
+            &self.maze,
+            &mut self.solve_rng,
+            &mut self.visited,
+            &mut self.visitor,
+        ) {
+            solver::Path::Cell(idx) => vec![idx],
+            solver::Path::Solved => {
+                self.is_solved = true;
+                return vec![];
+            }
+            solver::Path::None => vec![],
+        }
     }
 
     pub fn get_seed(&self) -> usize {
@@ -137,11 +147,10 @@ impl App {
         self.maze.board.as_ptr()
     }
 
-    pub fn solve(&self) -> Vec<usize> {
-        if let Some(sol) = solver::solve(&self.maze) {
-            sol
-        } else {
-            vec![]
-        }
+    pub fn solution(&self) -> Vec<usize> {
+        self.visitor
+            .iter()
+            .map(|v| self.maze.pos_to_index(&v.at))
+            .collect()
     }
 }
